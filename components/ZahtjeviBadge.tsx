@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useEffect, useState } from 'react';
 
@@ -11,7 +12,7 @@ export default function ZahtjeviBadge() {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const res = await fetch('http://localhost:5000/admin/zahtjevi-za-brisanje', {
+        const res = await fetch(`${API_URL}/admin/zahtjevi-za-brisanje`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -48,8 +49,8 @@ export default function DashboardPage() {
         const headers = { Authorization: `Bearer ${token}` };
 
         const [resVijesti, resStatistika] = await Promise.all([
-          fetch('http://localhost:5000/vijesti/najnovije', { headers }),
-          fetch('http://localhost:5000/statistika', { headers }),
+          fetch(`${API_URL}/vijesti/najnovije`, { headers }),
+          fetch(`${API_URL}/statistika`, { headers }),
         ]);
 
         if (resVijesti.ok) {

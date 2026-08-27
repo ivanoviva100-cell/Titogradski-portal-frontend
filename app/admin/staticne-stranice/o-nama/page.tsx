@@ -6,7 +6,9 @@ import { getStaticnuStranicu, sacuvajStaticnuStranicu } from '@/lib/api';
 export default function UrediONama() {
   const [sadrzaj, setSadrzaj] = useState<string>('');
   const [ucitavanje, setUcitavanje] = useState<boolean>(true);
+  const [cuvanje, setCuvanje] = useState<boolean>(false);
   const [poruka, setPoruka] = useState<string>('');
+  const [greskaUcitavanja, setGreskaUcitavanja] = useState<string>('');
 
   useEffect(() => {
     getStaticnuStranicu('o-nama')
@@ -16,12 +18,14 @@ export default function UrediONama() {
       })
       .catch((err: unknown) => {
         console.error('Greška pri učitavanju:', err);
+        setGreskaUcitavanja('Neuspješno učitavanje sadržaja stranice.');
         setUcitavanje(false);
       });
   }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setCuvanje(true);
     setPoruka('Čuvanje u toku...');
 
     try {
@@ -34,6 +38,8 @@ export default function UrediONama() {
       } else {
         setPoruka('Došlo je do neočekivane greške.');
       }
+    } finally {
+      setCuvanje(false);
     }
   };
 
@@ -42,6 +48,12 @@ export default function UrediONama() {
   return (
     <div className="p-8 max-w-4xl mx-auto text-slate-200">
       <h1 className="text-2xl font-bold mb-6">Uređivanje stranice: O nama</h1>
+
+      {greskaUcitavanja && (
+        <div className="mb-4 p-3 bg-red-600/20 border border-red-500 rounded text-sm text-red-300">
+          {greskaUcitavanja}
+        </div>
+      )}
 
       {poruka && (
         <div className="mb-4 p-3 bg-blue-600/20 border border-blue-500 rounded text-sm">
@@ -64,9 +76,10 @@ export default function UrediONama() {
 
         <button
           type="submit"
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors shadow-sm"
+          disabled={cuvanje}
+          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors shadow-sm"
         >
-          Sačuvaj izmjene
+          {cuvanje ? 'Čuvanje...' : 'Sačuvaj izmjene'}
         </button>
       </form>
     </div>

@@ -109,7 +109,7 @@ export default function AdminReklamePage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Upravljanje reklamama</h1>
         <p className="text-sm text-slate-400">Kreirajte, mijenjajte i kontrolišite oglasne pozicije na portalu.</p>
-        <p className="text-sm text-slate-400">
+        <div className="text-sm text-slate-400">
           <table>
             <tr>
             <td>top-banner:</td><td>728/90px</td>
@@ -121,7 +121,7 @@ export default function AdminReklamePage() {
               <td>sidebar:</td><td>300/250px</td>
             </tr>
           </table>
-        </p>
+        </div>
       </div>
 
       {poruka && (

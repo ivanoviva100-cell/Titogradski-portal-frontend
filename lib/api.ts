@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -12,7 +12,6 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  // endpoint već kreće sa '/' (npr. '/staticne-stranice?tip=marketing')
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,

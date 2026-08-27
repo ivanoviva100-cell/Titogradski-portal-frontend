@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { API_URL } from '@/lib/api';
 
 interface AdPlaceholderProps {
   type: 'banner-top' | 'banner-middle' | 'sidebar';
@@ -16,7 +17,7 @@ interface Reklama {
 
 async function getReklama(pozicija: string): Promise<Reklama | null> {
   try {
-    const res = await fetch(`http://localhost:5000/reklame?pozicija=${pozicija}&aktivna=true`, {
+    const res = await fetch(`${API_URL}/reklame?pozicija=${pozicija}&aktivna=true`, {
       cache: 'no-store',
     });
     if (!res.ok) return null;

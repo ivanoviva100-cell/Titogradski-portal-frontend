@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { use, useEffect, useState } from 'react';
 import Header from '@/components/Header';
@@ -21,7 +22,7 @@ export default function RubrikaPage({ params }: PageProps) {
     let isMounted = true;
 
     // Slanje zahtjeva na backend (kategorija sa prvim velikim slovom ili tačnim nazivom)
-    fetch(`http://localhost:5000/vijesti?kategorija=${encodeURIComponent(resolvedParams.rubrika)}`)
+    fetch(`${API_URL}/vijesti?kategorija=${encodeURIComponent(resolvedParams.rubrika)}`)
       .then((res) => res.json())
       .then((data) => {
         if (!isMounted) return;

@@ -1,5 +1,6 @@
 'use client';
 
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 
@@ -49,7 +50,7 @@ export default function Header() {
 
   // Dinamičko povlačenje kategorija sa bekenda
   useEffect(() => {
-    fetch('http://localhost:5000/kategorije')
+    fetch(`${API_URL}/kategorije`)
       .then((res) => res.json())
       .then((data: Kategorija[]) => {
         if (Array.isArray(data)) {

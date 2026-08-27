@@ -2,6 +2,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AdPlaceholder from '@/components/AdPlaceholder';
 import VijestKartica, { VijestTip } from '@/components/VijestKartica';
+import { API_URL } from '@/lib/api';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -9,7 +10,7 @@ interface PageProps {
 
 async function getVijestiPoKategoriji(slug: string): Promise<VijestTip[]> {
   try {
-    const res = await fetch(`http://localhost:5000/vijesti/kategorija/${slug}`, {
+    const res = await fetch(`${API_URL}/vijesti/kategorija/${slug}`, {
       cache: 'no-store',
     });
     if (!res.ok) return [];

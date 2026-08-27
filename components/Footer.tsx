@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -13,7 +14,7 @@ export default function Footer() {
   const [rubrike, setRubrike] = useState<{ naziv: string; path: string }[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/kategorije')
+    fetch(`${API_URL}/kategorije`)
       .then((res) => res.json())
       .then((data: Kategorija[]) => {
         if (Array.isArray(data)) {

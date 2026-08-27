@@ -1,5 +1,6 @@
 'use client';
 
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useCallback } from 'react';
 
 interface Zahtjev {
@@ -38,7 +39,7 @@ export default function ZahtjeviModal({ onClose, onRefresh }: ZahtjeviModalProps
       }
 
       // Ispravljena ruta prema app.ts
-      const res = await fetch('http://localhost:5000/admin/zahtjevi-za-brisanje', {
+      const res = await fetch(`${API_URL}/admin/zahtjevi-za-brisanje`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -73,7 +74,7 @@ export default function ZahtjeviModal({ onClose, onRefresh }: ZahtjeviModalProps
     try {
       const token = localStorage.getItem('token');
       // Ispravljena ruta prema app.ts (/admin/zahtjevi-za-brisanje/:id/odluka)
-      const res = await fetch(`http://localhost:5000/admin/zahtjevi-za-brisanje/${id}/odluka`, {
+      const res = await fetch(`${API_URL}/admin/zahtjevi-za-brisanje/${id}/odluka`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

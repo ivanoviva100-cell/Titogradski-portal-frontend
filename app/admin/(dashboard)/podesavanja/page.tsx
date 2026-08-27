@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect, FormEvent } from 'react';
 
@@ -13,7 +14,7 @@ export default function PodesavanjaPage() {
   useEffect(() => {
     const ucitajPodesavanja = async () => {
       try {
-        const res = await fetch('http://localhost:5000/podesavanja');
+        const res = await fetch(`${API_URL}/podesavanja`);
         if (!res.ok) throw new Error('Neuspješno učitavanje podešavanja.');
 
         const data = await res.json();
@@ -41,7 +42,7 @@ export default function PodesavanjaPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/podesavanja', {
+      const res = await fetch(`${API_URL}/podesavanja`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

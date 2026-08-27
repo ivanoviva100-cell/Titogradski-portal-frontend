@@ -1,5 +1,6 @@
 'use client';
 
+import { API_URL } from '@/lib/api';
 import { useState, useEffect, useCallback } from 'react';
 import { getSveVijesti, getSveKategorije, kreirajVijest, azurirajVijest, obrisiVijest } from '@/lib/api';
 
@@ -149,7 +150,7 @@ export default function VijestiPage() {
         const formData = new FormData();
         formData.append('slika', slikaFajl);
 
-        const uploadRes = await fetch('http://localhost:5000/api/upload', {
+        const uploadRes = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           body: formData,
         });

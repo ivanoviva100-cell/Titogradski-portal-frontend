@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect, FormEvent } from 'react';
 
@@ -47,7 +48,7 @@ export default function KorisniciPage() {
     const ucitajKorisnike = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/korisnici', {
+        const res = await fetch(`${API_URL}/korisnici`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -72,7 +73,7 @@ export default function KorisniciPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/korisnici', {
+      const res = await fetch(`${API_URL}/korisnici`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ export default function KorisniciPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/korisnici/${id}`, {
+      const res = await fetch(`${API_URL}/korisnici/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });

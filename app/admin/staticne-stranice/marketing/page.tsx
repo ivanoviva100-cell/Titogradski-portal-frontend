@@ -6,7 +6,9 @@ import { getStaticnuStranicu, sacuvajStaticnuStranicu } from '@/lib/api';
 export default function UrediMarketing() {
   const [sadrzaj, setSadrzaj] = useState<string>('');
   const [ucitavanje, setUcitavanje] = useState<boolean>(true);
+  const [cuvanje, setCuvanje] = useState<boolean>(false);
   const [poruka, setPoruka] = useState<string>('');
+  const [greskaUcitavanja, setGreskaUcitavanja] = useState<string>('');
 
   useEffect(() => {
     getStaticnuStranicu('marketing')
@@ -16,12 +18,14 @@ export default function UrediMarketing() {
       })
       .catch((err: unknown) => {
         console.error('Greška pri učitavanju:', err);
+        setGreskaUcitavanja('Neuspješno učitavanje sadržaja stranice.');
         setUcitavanje(false);
       });
   }, []);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setCuvanje(true);
     setPoruka('Čuvanje u toku...');
 
     try {
@@ -33,8 +37,10 @@ export default function UrediMarketing() {
         setPoruka(err.message);
       } else {
         setPoruka('Došlo je do neočekivane greške.');
+      } 
+    } finally {
+        setCuvanje(false)
       }
-    }
   };
 
   if (ucitavanje) return <div className="p-6 text-white">Učitavanje...</div>;
@@ -42,6 +48,12 @@ export default function UrediMarketing() {
   return (
     <div className="p-8 max-w-4xl mx-auto text-slate-200">
       <h1 className="text-2xl font-bold mb-6">Uređivanje stranice: Marketing</h1>
+
+      {greskaUcitavanja && (
+        <div className="mb-4 p-3 bg-red-600/20 border border-red-500 rounded text-sm text-red-300">
+          {greskaUcitavanja}
+        </div>
+      )}
 
       {poruka && (
         <div className="mb-4 p-3 bg-blue-600/20 border border-blue-500 rounded text-sm">

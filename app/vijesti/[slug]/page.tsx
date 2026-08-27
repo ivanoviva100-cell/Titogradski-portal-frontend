@@ -3,6 +3,7 @@ import AdPlaceholder from '@/components/AdPlaceholder';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import Image from 'next/image';
+import { API_URL } from '@/lib/api';
 
 interface Autor {
   imePrezime: string;
@@ -28,7 +29,7 @@ interface Vijest {
 
 async function getSveVijesti(): Promise<Vijest[]> {
   try {
-    const res = await fetch('http://localhost:5000/vijesti', {
+    const res = await fetch(`${API_URL}/vijesti`, {
       cache: 'no-store'
     });
     if (!res.ok) return [];
@@ -120,7 +121,7 @@ export default async function VijestDetaljPage({ params }: PageProps) {
             </header>
 
             {vijest.slikaUrl && (
-  <div className="rounded-lg overflow-hidden shadow-md relative w-full h-112.5">
+  <div className="rounded-lg overflow-hidden shadow-md relative w-full h-[450px]">
     <Image 
       src={vijest.slikaUrl} 
       alt={vijest.naslov} 

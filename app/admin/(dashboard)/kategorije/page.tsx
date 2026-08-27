@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '@/lib/api';
 
 interface Kategorija {
   id: number;
@@ -46,7 +47,7 @@ export default function KategorijePage() {
 
   const ucitajKategorije = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:5000/kategorije');
+      const res = await fetch(`${API_URL}/kategorije`);
       if (res.ok) {
         const data = await res.json();
         setKategorije(data);
@@ -75,7 +76,7 @@ useEffect(() => {
     try {
       const korisnik = JSON.parse(sačuvaniKorisnik);
       if (korisnik.uloga !== 'ADMIN') {
-        router.push('/admin/dashboard'); // Novinar nema šta da traži ovdje, vraćamo ga na dashboard
+        router.push('/admin/dashboard'); 
         return;
       }
     } catch {
@@ -96,8 +97,8 @@ useEffect(() => {
 
     const token = localStorage.getItem('token');
     const url = editingId
-      ? `http://localhost:5000/kategorije/${editingId}`
-      : 'http://localhost:5000/kategorije';
+      ? `${API_URL}/kategorije/${editingId}`
+      : `${API_URL}/kategorije`;
     const method = editingId ? 'PUT' : 'POST';
 
     try {
@@ -159,7 +160,7 @@ useEffect(() => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/kategorije/${id}`, {
+      const res = await fetch(`${API_URL}/kategorije/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,

@@ -1,4 +1,5 @@
 'use client';
+import { API_URL } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 
@@ -23,7 +24,7 @@ export default function KomentariPage() {
     const fetchKomentari = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/komentari', {
+        const res = await fetch(`${API_URL}/komentari`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -53,7 +54,7 @@ export default function KomentariPage() {
   const handleOdobri = async (id: number) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000s/komentari/${id}/odobri`, {
+      const res = await fetch(`${API_URL}/komentari/${id}/odobri`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -77,7 +78,7 @@ export default function KomentariPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/komentari/${id}`, {
+      const res = await fetch(`${API_URL}/komentari/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

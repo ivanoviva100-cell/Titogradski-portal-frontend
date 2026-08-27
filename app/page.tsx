@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import KategorijeSlider from '@/components/KategorijeSlider';
 import Image from 'next/image';
-
+import { API_URL } from '@/lib/api';
 
 interface Autor {
   imePrezime: string;
@@ -32,7 +32,7 @@ interface Vijest {
 
 async function getVijesti(): Promise<Vijest[]> {
   try {
-    const res = await fetch('http://localhost:5000/vijesti', {
+    const res = await fetch(`${API_URL}/vijesti`, {
       cache: 'no-store'
     });
     if (!res.ok) return [];
