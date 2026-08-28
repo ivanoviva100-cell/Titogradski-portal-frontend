@@ -23,6 +23,7 @@ interface Vijest {
   sadrzaj: string;
   slug: string;
   slikaUrl: string;
+  slikaOpis?: string | null; // Dodato polje za opis slike
   brojPregleda: number;
   datumKreiranja: string;
   kategorija: Kategorija;
@@ -54,6 +55,7 @@ export default function VijestiPage() {
     sadrzaj: '',
     slug: '',
     slikaUrl: '',
+    slikaOpis: '', // Dodato u formu
     kategorijaId: '',
   });
 
@@ -85,7 +87,7 @@ export default function VijestiPage() {
   // Otvaranje modala za NOVU vijest
   const handleOpenCreateModal = () => {
     setSelectedVijestId(null);
-    setForma({ naslov: '', podnaslov: '', sadrzaj: '', slug: '', slikaUrl: '', kategorijaId: '' });
+    setForma({ naslov: '', podnaslov: '', sadrzaj: '', slug: '', slikaUrl: '', slikaOpis: '', kategorijaId: '' });
     setSlikaFajl(null);
     setFormError('');
     setIsModalOpen(true);
@@ -100,6 +102,7 @@ export default function VijestiPage() {
       sadrzaj: vijest.sadrzaj,
       slug: vijest.slug,
       slikaUrl: vijest.slikaUrl,
+      slikaOpis: vijest.slikaOpis || '',
       kategorijaId: vijest.kategorija ? String(vijest.kategorija.id) : '',
     });
     setSlikaFajl(null);
@@ -144,7 +147,6 @@ export default function VijestiPage() {
       setSubmitting(true);
       let konačniSlikaUrl = forma.slikaUrl;
 
-      // Ako je korisnik izabrao novu sliku sa računara, prvo je uploadujemo na /api/upload
       if (slikaFajl) {
         setUploadingImage(true);
         const formData = new FormData();
@@ -180,6 +182,7 @@ export default function VijestiPage() {
         sadrzaj: forma.sadrzaj,
         slug: forma.slug,
         slikaUrl: konačniSlikaUrl,
+        slikaOpis: forma.slikaOpis.trim() !== '' ? forma.slikaOpis : null, // Šalje null ako je prazno
         kategorijaId: Number(forma.kategorijaId),
         autorId: korisnik?.id,
       };
@@ -439,6 +442,18 @@ export default function VijestiPage() {
                     <p className="text-xs text-gray-500 mt-1">Trenutna slika je sačuvana. Izaberite novu samo ako želite da je promijenite.</p>
                   )}
                 </div>
+              </div>
+
+              {/* NOVO POLJE ZA OPIS / IZVOR SLIKE */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Opis / Izvor slike (opcionalno)</label>
+                <input
+                  type="text"
+                  value={forma.slikaOpis}
+                  onChange={(e) => setForma({ ...forma, slikaOpis: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="npr. Foto: Unsplash / Preuzeto sa: Vijesti.me"
+                />
               </div>
 
               <div>

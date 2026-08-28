@@ -22,6 +22,7 @@ interface Vijest {
   sadrzaj: string;
   slug: string;
   slikaUrl: string;
+  slikaOpis?: string | null;
   datumKreiranja: string;
   kategorija?: Kategorija;
   autor?: Autor;
@@ -121,14 +122,24 @@ export default async function VijestDetaljPage({ params }: PageProps) {
             </header>
 
             {vijest.slikaUrl && (
-  <div className="rounded-lg overflow-hidden shadow-md relative w-full h-[450px]">
-    <Image 
-      src={vijest.slikaUrl} 
-      alt={vijest.naslov} 
-      fill
-      sizes="(max-width: 768px) 100vw, 800px"
-      className="object-cover"
-    />
+  <div className="space-y-1.5">
+    <div className="rounded-lg overflow-hidden shadow-md relative w-full h-[450px]">
+      <Image 
+        src={vijest.slikaUrl} 
+        alt={vijest.naslov} 
+        fill
+        sizes="(max-width: 768px) 100vw, 800px"
+        className="object-cover"
+      />
+    </div>
+    
+    {/* Prikaz opisa/izvora slike van kontejnera slike */}
+    {vijest.slikaOpis && (
+      <p className="text-xs text-gray-500 italic text-right">
+        {vijest.slikaOpis}
+      </p>
+    )}
+    
   </div>
 )}
 

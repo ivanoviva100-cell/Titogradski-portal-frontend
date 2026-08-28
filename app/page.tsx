@@ -2,9 +2,9 @@ import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import AdPlaceholder from '@/components/AdPlaceholder';
 import Footer from '@/components/Footer';
-import Link from 'next/link';
+import NajnovijeSlider from '@/components/NajnovijeSlider';
+import TemeSekcija from '@/components/TemeSekcija';
 import KategorijeSlider from '@/components/KategorijeSlider';
-import Image from 'next/image';
 import { API_URL } from '@/lib/api';
 
 interface Autor {
@@ -46,15 +46,6 @@ async function getVijesti(): Promise<Vijest[]> {
 export default async function Home() {
   const vijesti: Vijest[] = await getVijesti();
 
-  const rubrike = [
-    'Podgorica',
-    'Politika',
-    'Ekonomija',
-    'Kultura',
-    'Sport',
-    'Servisne informacije'
-  ];
-
   return (
     <div className="min-h-screen flex flex-col justify-between bg-white text-gray-900">
       <div>
@@ -78,63 +69,16 @@ export default async function Home() {
           {/* Main Content Layout sa Sekcijama i Sidebar Reklamom */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-12">
             
-            {/* Lijeva strana: Sadrži obje sekcije (zauzima 8 kolona) */}
+            {/* Lijeva strana: Sadrži sekcije (zauzima 8 kolona) */}
             <div className="lg:col-span-8 space-y-12">
               
-              {/* 1. SEKCIJA: Po jedna najnovija vijest iz svake kategorije */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold uppercase tracking-wide text-gray-800 border-b pb-2">
-                  Najnovije vijesti
-                </h2>
+              {/* 1. SEKCIJA: Najnovije vijesti (Slider sa 3 u redu) */}
+              <NajnovijeSlider vijesti={vijesti} />
 
-                {rubrike.map((nazivRubrike) => {
-                  const najnovijaU_Rubrici = vijesti.find(
-                    (v) => v.kategorija?.naziv?.trim().toLowerCase() === nazivRubrike.trim().toLowerCase()
-                  );
+              {/* 2. SEKCIJA: Teme i komentari (3 kolone sa slikom + tekstualne vijesti ispod) */}
+              <TemeSekcija vijesti={vijesti} />
 
-                  return (
-                    <div key={`prva-${nazivRubrike}`} className="bg-white p-6 rounded-lg shadow-sm">
-                      <h3 className="text-lg font-bold uppercase text-gray-900 mb-3">
-                        {nazivRubrike}
-                      </h3>
-                      
-                      {najnovijaU_Rubrici ? (
-                        <Link 
-                          href={`/vijesti/${najnovijaU_Rubrici.slug}`}
-                          className="bg-white p-4 rounded border border-white flex flex-col sm:flex-row gap-4 items-center hover:shadow-md hover:border-blue-400 transition-all group "
-                        >
-                          {najnovijaU_Rubrici.slikaUrl && (
-  <div className="relative w-full sm:w-56 h-36 shrink-0 overflow-hidden rounded">
-    <Image 
-      src={najnovijaU_Rubrici.slikaUrl} 
-      alt={najnovijaU_Rubrici.naslov} 
-      fill
-      sizes="(max-width: 640px) 100vw, 224px"
-      className="object-cover"
-    />
-  </div>
-)}
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-bold text-base group-hover:text-blue-600 transition-colors line-clamp-2">
-                              {najnovijaU_Rubrici.naslov}
-                            </h4>
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                              {najnovijaU_Rubrici.podnaslov}
-                            </p>
-                            <span className="text-[10px] text-gray-500 mt-2 block">
-                              {new Date(najnovijaU_Rubrici.datumKreiranja).toLocaleDateString('sr-ME')}
-                            </span>
-                          </div>
-                        </Link>
-                      ) : (
-                        <p className="text-xs text-gray-700 italic">Nema objavljenih vijesti u ovoj rubrici.</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* 2. SEKCIJA: Grupe od po 4 vijesti sa rotacijom (KategorijeSlider) */}
+              {/* 3. SEKCIJA: Grupe od po 4 vijesti sa rotacijom (KategorijeSlider) */}
               <div>
                 <KategorijeSlider vijesti={vijesti} />
               </div>
