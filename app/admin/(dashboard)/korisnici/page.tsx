@@ -1,6 +1,5 @@
 'use client';
 import { API_URL } from '@/lib/api';
-
 import { useState, useEffect, FormEvent } from 'react';
 
 interface Korisnik {
@@ -16,7 +15,7 @@ export default function KorisniciPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Stanje za Modal i Formu
+  // Stanje za Modal (Dodavanje)
   const [prikaziModal, setPrikaziModal] = useState(false);
   const [imePrezime, setImePrezime] = useState('');
   const [email, setEmail] = useState('');
@@ -24,6 +23,12 @@ export default function KorisniciPage() {
   const [uloga, setUloga] = useState<'ADMIN' | 'NOVINAR'>('NOVINAR');
   const [formaGreska, setFormaGreska] = useState('');
   const [formaLoading, setFormaLoading] = useState(false);
+
+  // Stanje za Modal (Uređivanje postojećeg korisnika / Pseudonim)
+  const [urediKorisnika, setUrediKorisnika] = useState<Korisnik | null>(null);
+  const [urediImePrezime, setUrediImePrezime] = useState('');
+  const [urediUloga, setUrediUloga] = useState<'ADMIN' | 'NOVINAR'>('NOVINAR');
+  const [urediLoading, setUrediLoading] = useState(false);
 
   // Dohvatanje podataka o ulogovanom korisniku iz localStorage-a
   const [trenutniKorisnik] = useState<{ id: number | null; uloga: string | null }>(() => {
@@ -41,7 +46,6 @@ export default function KorisniciPage() {
     return { id: null, uloga: null };
   });
 
-  // Provjera da li je trenutno ulogovani korisnik ADMIN
   const jeAdmin = trenutniKorisnik.uloga === 'ADMIN';
 
   useEffect(() => {
@@ -83,10 +87,7 @@ export default function KorisniciPage() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Neuspešno kreiranje korisnika.');
-      }
+      if (!res.ok) throw new Error(data.error || 'Neuspešno kreiranje korisnika.');
 
       setKorisnici((prev) => [data, ...prev]);
       setPrikaziModal(false);
@@ -98,6 +99,42 @@ export default function KorisniciPage() {
       setFormaGreska(err instanceof Error ? err.message : 'Greška pri kreiranju.');
     } finally {
       setFormaLoading(false);
+    }
+  };
+
+  // Pokretanje modala za uređivanje
+  const otvoriUredjivanje = (korisnik: Korisnik) => {
+    setUrediKorisnika(korisnik);
+    setUrediImePrezime(korisnik.imePrezime);
+    setUrediUloga(korisnik.uloga as 'ADMIN' | 'NOVINAR');
+  };
+
+  // Čuvanje izmjena (ime/prezime ili nik)
+  const handleAzurirajKorisnika = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!urediKorisnika) return;
+    setUrediLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_URL}/korisnici/${urediKorisnika.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ imePrezime: urediImePrezime, uloga: urediUloga }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Neuspešno ažuriranje.');
+
+      setKorisnici((prev) => prev.map((k) => (k.id === data.id ? data : k)));
+      setUrediKorisnika(null);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Greška pri ažuriranju.');
+    } finally {
+      setUrediLoading(false);
     }
   };
 
@@ -131,7 +168,6 @@ export default function KorisniciPage() {
           <p className="text-sm text-gray-500">Pregled i upravljanje registrovanim korisnicima sistema.</p>
         </div>
 
-        {/* 1. DUGME ZA DODAVANJE VIDI SAMO ADMIN */}
         {jeAdmin && (
           <button
             onClick={() => setPrikaziModal(true)}
@@ -148,7 +184,7 @@ export default function KorisniciPage() {
             <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
               <tr>
                 <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Ime i Prezime</th>
+                <th className="px-4 py-3">Ime / Pseudonim</th>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Uloga</th>
                 <th className="px-4 py-3">Datum registracije</th>
@@ -179,17 +215,24 @@ export default function KorisniciPage() {
                     <td className="px-4 py-3 text-gray-500 text-xs">
                       {new Date(korisnik.datumKreiranja).toLocaleDateString('sr-RS')}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      {/* 2. DUGME ZA BRISANJE VIDI SAMO ADMIN (I TO SAMO ZA DRUGE KORISNIKE) */}
-                      {jeAdmin && !jeLiTrenutni ? (
-                        <button
-                          onClick={() => handleObrisi(korisnik.id)}
-                          className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded text-xs font-medium transition"
-                        >
-                          Obriši
-                        </button>
-                      ) : jeLiTrenutni ? (
-                        <span className="text-xs text-gray-400 italic">Sopstveni nalog</span>
+                    <td className="px-4 py-3 text-right space-x-2">
+                      {jeAdmin ? (
+                        <>
+                          <button
+                            onClick={() => otvoriUredjivanje(korisnik)}
+                            className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1.5 rounded text-xs font-medium transition"
+                          >
+                            Uredi
+                          </button>
+                          {!jeLiTrenutni && (
+                            <button
+                              onClick={() => handleObrisi(korisnik.id)}
+                              className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded text-xs font-medium transition"
+                            >
+                              Obriši
+                            </button>
+                          )}
+                        </>
                       ) : (
                         <span className="text-xs text-gray-400">—</span>
                       )}
@@ -216,12 +259,13 @@ export default function KorisniciPage() {
 
             <form onSubmit={handleDodajKorisnika} className="space-y-3 text-sm">
               <div>
-                <label className="block font-medium text-gray-700 mb-1">Ime i Prezime</label>
+                <label className="block font-medium text-gray-700 mb-1">Ime i Prezime (ili Nik/Pseudonim)</label>
                 <input
                   type="text"
                   required
                   value={imePrezime}
                   onChange={(e) => setImePrezime(e.target.value)}
+                  placeholder="Npr. Petar Petrović ili Anonimni Novinar"
                   className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -274,6 +318,59 @@ export default function KorisniciPage() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition"
                 >
                   {formaLoading ? 'Spremanje...' : 'Sačuvaj'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ZA UREĐIVANJE IMENA / NIKA KORISNIKA */}
+      {urediKorisnika && jeAdmin && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full space-y-4 shadow-xl">
+            <h2 className="text-lg font-bold text-gray-900">Uredi podatke korisnika</h2>
+            <p className="text-xs text-gray-500">Možete izmijeniti ime i prezime ili unijeti nik/pseudonim za anonimnost.</p>
+
+            <form onSubmit={handleAzurirajKorisnika} className="space-y-3 text-sm">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Ime i Prezime / Pseudonim</label>
+                <input
+                  type="text"
+                  required
+                  value={urediImePrezime}
+                  onChange={(e) => setUrediImePrezime(e.target.value)}
+                  placeholder="Unesite pravo ime ili nik (npr. Redakcija)"
+                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Uloga</label>
+                <select
+                  value={urediUloga}
+                  onChange={(e) => setUrediUloga(e.target.value as 'ADMIN' | 'NOVINAR')}
+                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="NOVINAR">NOVINAR</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setUrediKorisnika(null)}
+                  className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition"
+                >
+                  Otkaži
+                </button>
+                <button
+                  type="submit"
+                  disabled={urediLoading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition"
+                >
+                  {urediLoading ? 'Ažuriranje...' : 'Sačuvaj izmjene'}
                 </button>
               </div>
             </form>

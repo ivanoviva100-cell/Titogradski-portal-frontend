@@ -4,6 +4,9 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import Image from 'next/image';
 import { API_URL } from '@/lib/api';
+import FotoGalerija from './FotoGalerija';
+import ShareButtons from './ShareButtons';
+import SadrzajTeksta from './SadrzajTeksta';
 
 interface Autor {
   imePrezime: string;
@@ -23,6 +26,7 @@ interface Vijest {
   slug: string;
   slikaUrl: string;
   slikaOpis?: string | null;
+  fotoGalerija?: string[];
   datumKreiranja: string;
   kategorija?: Kategorija;
   autor?: Autor;
@@ -50,8 +54,6 @@ export default async function VijestDetaljPage({ params }: PageProps) {
   const slug = resolvedParams.slug;
 
   const sveVijesti = await getSveVijesti();
-  
-  // Pronađi trenutnu vijest na osnovu slug-a
   const vijest = sveVijesti.find((v) => v.slug === slug);
 
   if (!vijest) {
@@ -72,14 +74,13 @@ export default async function VijestDetaljPage({ params }: PageProps) {
     );
   }
 
-  // Filtriraj ostale vijesti iz iste rubrike (da ne prikazujemo trenutnu vijest u preporukama)
   const ostaleIzRubrike = sveVijesti
     .filter(
       (v) => 
         v.kategorija?.id === vijest.kategorija?.id && 
         v.id !== vijest.id
     )
-    .slice(0, 4); // Uzmi poslednje 4 vijesti
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-white text-gray-900 pt-33">
@@ -87,11 +88,8 @@ export default async function VijestDetaljPage({ params }: PageProps) {
         <Header />
 
         <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-
-          {/* Top Banner Reklama */}
           <AdPlaceholder type="banner-top" link="https://partner-sajt.com"/>
 
-          {/* Putanja (Breadcrumb) */}
           <div className="border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-600 rounded bg-gray-50 uppercase">
             <Link href="/" className="hover:text-blue-600">NASLOVNA</Link> 
             {vijest.kategorija && (
@@ -104,7 +102,6 @@ export default async function VijestDetaljPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Glavni sadržaj vijesti */}
           <article className="space-y-6">
             <header className="space-y-3">
               <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 leading-tight">
@@ -122,39 +119,36 @@ export default async function VijestDetaljPage({ params }: PageProps) {
             </header>
 
             {vijest.slikaUrl && (
-  <div className="space-y-1.5">
-    <div className="rounded-lg overflow-hidden shadow-md relative w-full h-[450px]">
-      <Image 
-        src={vijest.slikaUrl} 
-        alt={vijest.naslov} 
-        fill
-        sizes="(max-width: 768px) 100vw, 800px"
-        className="object-cover"
-      />
-    </div>
-    
-    {/* Prikaz opisa/izvora slike van kontejnera slike */}
-    {vijest.slikaOpis && (
-      <p className="text-xs text-gray-500 italic text-right">
-        {vijest.slikaOpis}
-      </p>
-    )}
-    
-  </div>
-)}
+              <div className="space-y-1.5">
+                <div className="rounded-lg overflow-hidden shadow-md relative w-full h-[450px]">
+                  <Image 
+                    src={vijest.slikaUrl} 
+                    alt={vijest.naslov} 
+                    fill
+                    sizes="(max-width: 768px) 100vw, 800px"
+                    className="object-cover"
+                  />
+                </div>
+                {vijest.slikaOpis && (
+                  <p className="text-xs text-gray-500 italic text-right">
+                    {vijest.slikaOpis}
+                  </p>
+                )}
+              </div>
+            )}
 
-            {/* Tekst vijesti */}
-            <div className="text-gray-800 leading-relaxed space-y-4 text-base whitespace-pre-line">
-              {vijest.sadrzaj}
-            </div>
-          </article>
+            <SadrzajTeksta sadrzaj={vijest.sadrzaj} />
 
-          {/* Baner reklama iznad preporuka */}
+            {/* Poziv izdvojene komponente za galeriju */}
+            <FotoGalerija slike={vijest.fotoGalerija || []} naslovVijesti={vijest.naslov} />
+          
+          <ShareButtons naslov={vijest.naslov} />
+
+            </article>
           <div className="pt-4">
             <AdPlaceholder type="banner-middle" link="https://drugi-partner.com"/>
           </div>
 
-          {/* SEKCIJA: Ostale vijesti iz rubrike (Posljednje 4) */}
           {ostaleIzRubrike.length > 0 && (
             <section className="pt-8 border-t border-gray-200 space-y-4">
               <h3 className="text-lg font-bold uppercase tracking-wider text-gray-900">
@@ -169,16 +163,16 @@ export default async function VijestDetaljPage({ params }: PageProps) {
                     className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blue-400 transition-all group"
                   >
                     {ostalaVijest.slikaUrl && (
-  <div className="relative w-full h-32 overflow-hidden rounded">
-    <Image 
-      src={ostalaVijest.slikaUrl} 
-      alt={ostalaVijest.naslov} 
-      fill
-      sizes="(max-width: 768px) 100vw, 300px"
-      className="object-cover"
-    />
-  </div>
-)}
+                      <div className="relative w-full h-32 overflow-hidden rounded">
+                        <Image 
+                          src={ostalaVijest.slikaUrl} 
+                          alt={ostalaVijest.naslov} 
+                          fill
+                          sizes="(max-width: 768px) 100vw, 300px"
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
                     <div className="p-3 flex-1 flex flex-col justify-between">
                       <div>
                         <h4 className="font-bold text-xs group-hover:text-blue-600 transition-colors line-clamp-2">

@@ -23,9 +23,11 @@ interface Vijest {
   sadrzaj: string;
   slug: string;
   slikaUrl: string;
-  slikaOpis?: string | null; // Dodato polje za opis slike
+  slikaOpis?: string | null;
+  fotoGalerija?: string[];
   brojPregleda: number;
   datumKreiranja: string;
+  pozicijaHero: string;
   kategorija: Kategorija;
   autor?: Autor | null;
 }
@@ -45,8 +47,9 @@ export default function VijestiPage() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [formError, setFormError] = useState('');
 
-  // Novo stanje za fajl slike i upload status
+  // Stanja za fajlove slika i upload status
   const [slikaFajl, setSlikaFajl] = useState<File | null>(null);
+  const [galerijaFajlovi, setGalerijaFajlovi] = useState<File[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const [forma, setForma] = useState({
@@ -55,8 +58,10 @@ export default function VijestiPage() {
     sadrzaj: '',
     slug: '',
     slikaUrl: '',
-    slikaOpis: '', // Dodato u formu
+    slikaOpis: '',
+    fotoGalerija: [] as string[],
     kategorijaId: '',
+    pozicijaHero: 'STANDARDNA',
   });
 
   const ucitajPodatke = useCallback(async () => {
@@ -87,14 +92,29 @@ export default function VijestiPage() {
   // Otvaranje modala za NOVU vijest
   const handleOpenCreateModal = () => {
     setSelectedVijestId(null);
-    setForma({ naslov: '', podnaslov: '', sadrzaj: '', slug: '', slikaUrl: '', slikaOpis: '', kategorijaId: '' });
+    setForma({
+      naslov: '',
+      podnaslov: '',
+      sadrzaj: '',
+      slug: '',
+      slikaUrl: '',
+      slikaOpis: '',
+      fotoGalerija: [],
+      kategorijaId: '',
+      pozicijaHero: 'STANDARDNA',
+    });
     setSlikaFajl(null);
+    setGalerijaFajlovi([]);
     setFormError('');
     setIsModalOpen(true);
   };
 
   // Otvaranje modala za IZMJENU postojeće vijesti
   const handleOpenEditModal = (vijest: Vijest) => {
+    const postojecaGalerija = Array.isArray(vijest.fotoGalerija)
+      ? vijest.fotoGalerija
+      : [];
+
     setSelectedVijestId(vijest.id);
     setForma({
       naslov: vijest.naslov,
@@ -103,16 +123,19 @@ export default function VijestiPage() {
       slug: vijest.slug,
       slikaUrl: vijest.slikaUrl,
       slikaOpis: vijest.slikaOpis || '',
+      fotoGalerija: postojecaGalerija,
       kategorijaId: vijest.kategorija ? String(vijest.kategorija.id) : '',
+      pozicijaHero: vijest.pozicijaHero || 'STANDARDNA',
     });
     setSlikaFajl(null);
+    setGalerijaFajlovi([]);
     setFormError('');
     setIsModalOpen(true);
   };
 
   const handleNaslovChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const naslovVal = e.target.value;
-    
+
     const generisanSlug = !selectedVijestId
       ? naslovVal
           .toLowerCase()
@@ -147,6 +170,7 @@ export default function VijestiPage() {
       setSubmitting(true);
       let konačniSlikaUrl = forma.slikaUrl;
 
+      // 1. Upload glavne slike ako je izabrana nova
       if (slikaFajl) {
         setUploadingImage(true);
         const formData = new FormData();
@@ -158,10 +182,8 @@ export default function VijestiPage() {
         });
 
         const uploadData = await uploadRes.json();
-        setUploadingImage(false);
-
         if (!uploadRes.ok) {
-          throw new Error(uploadData.error || 'Greška prilikom uploada slike.');
+          throw new Error(uploadData.error || 'Greška prilikom uploada glavne slike.');
         }
 
         konačniSlikaUrl = uploadData.slikaUrl;
@@ -170,8 +192,31 @@ export default function VijestiPage() {
       if (!konačniSlikaUrl) {
         setFormError('Slika je obavezna (izaberite fajl ili unesite URL).');
         setSubmitting(false);
+        setUploadingImage(false);
         return;
       }
+
+      // 2. Upload dodatnih slika za foto galeriju (ako postoje novi fajlovi)
+      const konacnaGalerija = [...forma.fotoGalerija];
+      if (galerijaFajlovi.length > 0) {
+        setUploadingImage(true);
+        for (const fajl of galerijaFajlovi) {
+          const formData = new FormData();
+          formData.append('slika', fajl);
+
+          const uploadRes = await fetch(`${API_URL}/api/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          const uploadData = await uploadRes.json();
+          if (uploadRes.ok && uploadData.slikaUrl) {
+            konacnaGalerija.push(uploadData.slikaUrl);
+          }
+        }
+      }
+
+      setUploadingImage(false);
 
       const korisnikRaw = localStorage.getItem('korisnik');
       const korisnik = korisnikRaw ? JSON.parse(korisnikRaw) : null;
@@ -182,8 +227,10 @@ export default function VijestiPage() {
         sadrzaj: forma.sadrzaj,
         slug: forma.slug,
         slikaUrl: konačniSlikaUrl,
-        slikaOpis: forma.slikaOpis.trim() !== '' ? forma.slikaOpis : null, // Šalje null ako je prazno
+        slikaOpis: forma.slikaOpis.trim() !== '' ? forma.slikaOpis : null,
+        fotoGalerija: konacnaGalerija, // Šalje niz kao JSON
         kategorijaId: Number(forma.kategorijaId),
+        pozicijaHero: forma.pozicijaHero,
         autorId: korisnik?.id,
       };
 
@@ -217,7 +264,7 @@ export default function VijestiPage() {
     try {
       const res = await obrisiVijest(id);
       const porukaTekst = res?.message || 'Akcija je uspješno izvršena.';
-      
+
       if (porukaTekst.includes('obrisana')) {
         setVijesti((prev) => prev.filter((v) => v.id !== id));
         setPoruka({ tekst: porukaTekst, tip: 'success' });
@@ -351,7 +398,7 @@ export default function VijestiPage() {
       {/* MODAL ZA DODAVANJE / IZMJENU */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-xl">
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
               <h2 className="text-xl font-bold text-gray-900">
                 {selectedVijestId ? 'Uredi vijest' : 'Nova vijest'}
@@ -427,7 +474,7 @@ export default function VijestiPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Slika (Upload fajla) *</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Glavna slika *</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -439,12 +486,11 @@ export default function VijestiPage() {
                     className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                   {forma.slikaUrl && !slikaFajl && (
-                    <p className="text-xs text-gray-500 mt-1">Trenutna slika je sačuvana. Izaberite novu samo ako želite da je promijenite.</p>
+                    <p className="text-xs text-gray-500 mt-1">Trenutna slika sačuvana. Izaberite novu za zamjenu.</p>
                   )}
                 </div>
               </div>
 
-              {/* NOVO POLJE ZA OPIS / IZVOR SLIKE */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Opis / Izvor slike (opcionalno)</label>
                 <input
@@ -454,6 +500,35 @@ export default function VijestiPage() {
                   className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="npr. Foto: Unsplash / Preuzeto sa: Vijesti.me"
                 />
+              </div>
+
+              {/* Sekcija za foto galeriju */}
+              <div className="border-t pt-4">
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Foto Galerija (dodatne slike)</label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      setGalerijaFajlovi(Array.from(e.target.files));
+                    }
+                  }}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                
+                {forma.fotoGalerija.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2 items-center">
+                    <span className="text-xs text-gray-600 font-medium">Sačuvane slike u galeriji: {forma.fotoGalerija.length}</span>
+                    <button
+                      type="button"
+                      onClick={() => setForma({ ...forma, fotoGalerija: [] })}
+                      className="text-xs text-red-600 hover:underline ml-2"
+                    >
+                      Ukloni sve postojeće
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -466,6 +541,22 @@ export default function VijestiPage() {
                   className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Unesite kompletan tekst vijesti..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Pozicija u Hero sekciji</label>
+                <select
+                  value={forma.pozicijaHero}
+                  onChange={(e) => setForma({ ...forma, pozicijaHero: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                >
+                  <option value="STANDARDNA">Standardna (Nije u Hero sekciji)</option>
+                  <option value="GLAVNA">Glavna vijest (Najveća, lijevo)</option>
+                  <option value="SPOREDNA">Sporedna vijest (Jedna od 4 u gridu desno)</option>
+                </select>
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Sistem automatski preuzima najnovije ako nema ručno podešenih, ali ručni odabir ima prioritet.
+                </p>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t">
@@ -482,7 +573,7 @@ export default function VijestiPage() {
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
                 >
                   {uploadingImage
-                    ? 'Uploadovanje i optimizacija slika...'
+                    ? 'Uploadovanje slika i galerije...'
                     : submitting
                     ? 'Sačuvanje...'
                     : selectedVijestId

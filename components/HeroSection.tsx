@@ -1,12 +1,39 @@
 import VijestKartica, { VijestTip } from './VijestKartica';
 
+// Proširujemo lokalni tip ili osiguravamo da VijestTip sadrži pozicijaHero
+interface HeroVijestTip extends VijestTip {
+  pozicijaHero?: string;
+}
+
 interface HeroSectionProps {
-  vijesti?: VijestTip[];
+  vijesti?: HeroVijestTip[];
 }
 
 export default function HeroSection({ vijesti = [] }: HeroSectionProps) {
-  const glavnaVijest = vijesti[0];
-  const ostaleVijesti = vijesti.slice(1, 5);
+  // 1. Pronalaženje ručno označene glavne vijesti bez 'any' tipa
+  let glavnaVijest = vijesti.find((v) => v.pozicijaHero === 'GLAVNA');
+  
+  // 2. Pronalaženje ručno označenih sporednih vijesti (maksimalno 4)
+  let sporedneVijesti = vijesti.filter((v) => v.pozicijaHero === 'SPOREDNA').slice(0, 4);
+
+  // 3. Fallback logika ukoliko nema ručno podešenih pozicija
+  if (!glavnaVijest) {
+    const zauzeteIds = new Set(sporedneVijesti.map((v) => v.id));
+    glavnaVijest = vijesti.find((v) => !zauzeteIds.has(v.id));
+  }
+
+  if (sporedneVijesti.length < 4) {
+    const vecPrikazaneIds = new Set([
+      glavnaVijest?.id, 
+      ...sporedneVijesti.map((v) => v.id)
+    ].filter((id): id is number => id !== undefined));
+    
+    const preostaleZaPopunu = vijesti
+      .filter((v) => !vecPrikazaneIds.has(v.id))
+      .slice(0, 4 - sporedneVijesti.length);
+
+    sporedneVijesti = [...sporedneVijesti, ...preostaleZaPopunu];
+  }
 
   return (
     <section className="bg-gray-50 p-4 rounded-lg my-4">
@@ -26,8 +53,8 @@ export default function HeroSection({ vijesti = [] }: HeroSectionProps) {
         <div className="lg:col-span-5">
           <h3 className="text-xs font-bold uppercase mb-2 text-right text-gray-700">Ostale aktuelne vijesti</h3>
           <div className="grid grid-cols-2 gap-2">
-            {ostaleVijesti.length > 0 ? (
-              ostaleVijesti.map((v) => (
+            {sporedneVijesti.length > 0 ? (
+              sporedneVijesti.map((v) => (
                 <VijestKartica key={v.id} vijest={v} varijanta="mala" />
               ))
             ) : (

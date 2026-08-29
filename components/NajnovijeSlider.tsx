@@ -39,7 +39,16 @@ export default function NajnovijeSlider({ vijesti }: Props) {
     grupeVijesti.push(filtriraneVijesti.slice(i, i + 3));
   }
 
-  // Automatska mijenjanje grupa na svakih 5 sekundi
+  // Funkcije za navigaciju strelicama
+  const preidiNaPrethodnu = () => {
+    setCurrentIndex((prevIndex) => (prevIndex === 0 ? grupeVijesti.length - 1 : prevIndex - 1));
+  };
+
+  const preidiNaSljedecu = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % grupeVijesti.length);
+  };
+
+  // Automatsko mijenjanje grupa na svakih 5 sekundi
   useEffect(() => {
     if (grupeVijesti.length <= 1) return;
 
@@ -63,18 +72,41 @@ export default function NajnovijeSlider({ vijesti }: Props) {
           Najnovije vijesti
         </h2>
         
-        {/* Indikatori (tačkice) za trenutnu stranu */}
-        <div className="flex gap-1.5 items-center">
-          {grupeVijesti.map((_, idx) => (
+        {/* Kontrole: Indikatori (tačkice) i Strelice lijevo/desno */}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex gap-1.5 items-center">
+            {grupeVijesti.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentIndex(idx)}
+                className={`h-2 rounded-full transition-all ${
+                  currentIndex === idx ? 'w-6 bg-blue-600' : 'w-2 bg-gray-300'
+                }`}
+                aria-label={`Idi na stranu ${idx + 1}`}
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1 border-l pl-3 border-gray-200">
             <button
-              key={idx}
-              onClick={() => setCurrentIndex(idx)}
-              className={`h-2 rounded-full transition-all ${
-                currentIndex === idx ? 'w-6 bg-blue-600' : 'w-2 bg-gray-300'
-              }`}
-              aria-label={`Idi na stranu ${idx + 1}`}
-            />
-          ))}
+              onClick={preidiNaPrethodnu}
+              className="p-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+              aria-label="Prethodne vijesti"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            </button>
+            <button
+              onClick={preidiNaSljedecu}
+              className="p-1.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+              aria-label="Sljedeće vijesti"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 

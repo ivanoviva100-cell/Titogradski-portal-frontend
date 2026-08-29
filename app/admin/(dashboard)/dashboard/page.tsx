@@ -1,6 +1,5 @@
 'use client';
 import { API_URL } from '@/lib/api';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
@@ -24,6 +23,31 @@ interface Statistika {
   ukupnoKorisnika: number;
 }
 
+// Pomoćna funkcija za API pozive sa provjerom isteklog tokena (401)
+async function customFetch(url: string, options: RequestInit = {}) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
+  const res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      localStorage.removeItem('uloga');
+      alert("Vaša sesija je istekla. Molimo prijavite se ponovo.");
+      window.location.href = '/login';
+    }
+    throw new Error('Sesija je istekla.');
+  }
+
+  return res;
+}
+
 export default function DashboardPage() {
   const [vijesti, setVijesti] = useState<Vijest[]>([]);
   const [statistika, setStatistika] = useState<Statistika>({
@@ -45,12 +69,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const ucitajPodatke = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const headers = { Authorization: `Bearer ${token}` };
-
         const [resVijesti, resStatistika] = await Promise.all([
-          fetch(`${API_URL}/vijesti/najnovije`, { headers }),
-          fetch(`${API_URL}/statistika`, { headers }),
+          customFetch(`${API_URL}/vijesti/najnovije`),
+          customFetch(`${API_URL}/statistika`),
         ]);
 
         if (resVijesti.ok) {
