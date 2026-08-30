@@ -48,6 +48,18 @@ export default function Header() {
   const jeAdminIliNovinar =
     korisnik && (korisnik.uloga === 'ADMIN' || korisnik.uloga === 'NOVINAR');
 
+  // Funkcija koja vraća čitljiv naziv uloge
+  const getPrikazUloge = (uloga?: string) => {
+    switch (uloga) {
+      case 'ADMIN':
+        return 'Administrator';
+      case 'NOVINAR':
+        return 'Novinar';
+      default:
+        return 'Korisnik';
+    }
+  };
+
   // Dinamičko povlačenje kategorija sa bekenda
   useEffect(() => {
     fetch(`${API_URL}/kategorije`)
@@ -75,7 +87,7 @@ export default function Header() {
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>
-                Prijavljeni ste kao: <strong className="text-white">{korisnik?.ime || 'Korisnik'}</strong>
+                Prijavljeni ste kao: <strong className="text-white">{korisnik?.ime || getPrikazUloge(korisnik?.uloga)}</strong>
               </span>
             </div>
 

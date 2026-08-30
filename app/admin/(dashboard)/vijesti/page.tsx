@@ -2,6 +2,7 @@
 
 import { API_URL } from '@/lib/api';
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { getSveVijesti, getSveKategorije, kreirajVijest, azurirajVijest, obrisiVijest } from '@/lib/api';
 
 interface Kategorija {
@@ -63,6 +64,13 @@ export default function VijestiPage() {
     kategorijaId: '',
     pozicijaHero: 'STANDARDNA',
   });
+
+  // Helper funkcija za spajanje API_URL-a i relativne putanje slike iz baze
+  const getPunaSlikaUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+    return `${API_URL}${url}`;
+  };
 
   const ucitajPodatke = useCallback(async () => {
     try {
@@ -228,7 +236,7 @@ export default function VijestiPage() {
         slug: forma.slug,
         slikaUrl: konačniSlikaUrl,
         slikaOpis: forma.slikaOpis.trim() !== '' ? forma.slikaOpis : null,
-        fotoGalerija: konacnaGalerija, // Šalje niz kao JSON
+        fotoGalerija: konacnaGalerija,
         kategorijaId: Number(forma.kategorijaId),
         pozicijaHero: forma.pozicijaHero,
         autorId: korisnik?.id,
@@ -256,26 +264,75 @@ export default function VijestiPage() {
   };
 
   const handleObrisi = async (id: number) => {
-    if (!confirm('Da li ste sigurni da želite obrisati ovu vijest?')) return;
+    const korisnikRaw = localStorage.getItem('korisnik');
+    const korisnik = korisnikRaw ? JSON.parse(korisnikRaw) : null;
+    const isAdmin = korisnik?.uloga === 'ADMIN';
+
+    // 1. AKO JE ADMIN: Briše direktno bez zahtjeva
+    if (isAdmin) {
+      if (!confirm('Da li ste sigurni da želite da trajno obrišete ovu vijest?')) return;
+
+      setDeletingId(id);
+      setPoruka(null);
+
+      try {
+        await obrisiVijest(id); // Direktno brisanje iz API-ja
+        setVijesti((prev) => prev.filter((v) => v.id !== id));
+        setPoruka({ tekst: 'Vijest je uspješno obrisana.', tip: 'success' });
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setPoruka({ tekst: err.message, tip: 'error' });
+        } else {
+          setPoruka({ tekst: 'Došlo je do greške pri brisanju vijesti.', tip: 'error' });
+        }
+      } finally {
+        setDeletingId(null);
+      }
+      return;
+    }
+
+    // 2. AKO JE NOVINAR: Šalje zahtjev administratoru na odobrenje
+    const razlogUnos = prompt('Unesite razlog za brisanje ove vijesti (opcionalno):', 'Zastarjelo / Greška u tekstu');
+    if (razlogUnos === null) return;
 
     setDeletingId(id);
     setPoruka(null);
 
     try {
-      const res = await obrisiVijest(id);
-      const porukaTekst = res?.message || 'Akcija je uspješno izvršena.';
+      const token = localStorage.getItem('token');
+      // OBAVEZNO dodan ${API_URL} da gađa Express backend umjesto Next.js-a
+      const res = await fetch(`${API_URL}/zahtjevi-za-brisanje`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          vijestId: id, 
+          razlog: razlogUnos || 'Nema navedenog razloga' 
+        })
+      });
 
-      if (porukaTekst.includes('obrisana')) {
-        setVijesti((prev) => prev.filter((v) => v.id !== id));
-        setPoruka({ tekst: porukaTekst, tip: 'success' });
-      } else {
-        setPoruka({ tekst: porukaTekst, tip: 'info' });
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Server nije vratio JSON (Status: ${res.status}). Provjerite API putanju.`);
       }
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Greška prilikom slanja zahtjeva za brisanje.');
+      }
+
+      setPoruka({ 
+        tekst: 'Zahtjev za brisanje je uspješno poslat administratoru na odobrenje.', 
+        tip: 'success' 
+      });
     } catch (err: unknown) {
       if (err instanceof Error) {
         setPoruka({ tekst: err.message, tip: 'error' });
       } else {
-        setPoruka({ tekst: 'Došlo je do greške pri brisanju.', tip: 'error' });
+        setPoruka({ tekst: 'Došlo je do greške pri slanju zahtjeva.', tip: 'error' });
       }
     } finally {
       setDeletingId(null);
@@ -341,6 +398,7 @@ export default function VijestiPage() {
             <table className="w-full text-left text-sm text-gray-600">
               <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
                 <tr>
+                  <th className="px-4 py-3">Slika</th>
                   <th className="px-4 py-3">Naslov</th>
                   <th className="px-4 py-3">Kategorija</th>
                   <th className="px-4 py-3">Autor</th>
@@ -352,6 +410,21 @@ export default function VijestiPage() {
               <tbody className="divide-y divide-gray-200">
                 {filtriraneVijesti.map((v) => (
                   <tr key={v.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      {v.slikaUrl ? (
+                        <div className="relative w-12 h-10 overflow-hidden rounded shadow-sm">
+                          <Image 
+                            src={getPunaSlikaUrl(v.slikaUrl)} 
+                            alt={v.naslov} 
+                            fill
+                            sizes="48px"
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">Nema</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-medium text-gray-900 max-w-md truncate">{v.naslov}</td>
                     <td className="px-4 py-3">
                       <span className="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded">
@@ -384,7 +457,7 @@ export default function VijestiPage() {
                 ))}
                 {filtriraneVijesti.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                       Nije pronađena nijedna vijest.
                     </td>
                   </tr>
@@ -486,7 +559,12 @@ export default function VijestiPage() {
                     className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                   {forma.slikaUrl && !slikaFajl && (
-                    <p className="text-xs text-gray-500 mt-1">Trenutna slika sačuvana. Izaberite novu za zamjenu.</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="relative w-10 h-10 rounded overflow-hidden">
+                        <Image src={getPunaSlikaUrl(forma.slikaUrl)} alt="Preview" fill sizes="40px" className="object-cover" />
+                      </div>
+                      <p className="text-xs text-gray-500">Trenutna slika sačuvana.</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -518,15 +596,24 @@ export default function VijestiPage() {
                 />
                 
                 {forma.fotoGalerija.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2 items-center">
-                    <span className="text-xs text-gray-600 font-medium">Sačuvane slike u galeriji: {forma.fotoGalerija.length}</span>
-                    <button
-                      type="button"
-                      onClick={() => setForma({ ...forma, fotoGalerija: [] })}
-                      className="text-xs text-red-600 hover:underline ml-2"
-                    >
-                      Ukloni sve postojeće
-                    </button>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span className="text-xs text-gray-600 font-medium">Sačuvane slike u galeriji: {forma.fotoGalerija.length}</span>
+                      <button
+                        type="button"
+                        onClick={() => setForma({ ...forma, fotoGalerija: [] })}
+                        className="text-xs text-red-600 hover:underline ml-2"
+                      >
+                        Ukloni sve postojeće
+                      </button>
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto py-1">
+                      {forma.fotoGalerija.map((galImg, i) => (
+                        <div key={i} className="relative w-12 h-12 rounded border overflow-hidden shrink-0">
+                          <Image src={getPunaSlikaUrl(galImg)} alt={`Galerija ${i}`} fill sizes="48px" className="object-cover" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

@@ -23,6 +23,10 @@ interface ZahtjeviModalProps {
   onRefresh?: () => void;
 }
 
+interface ErrorResponse {
+  error?: string;
+}
+
 export default function ZahtjeviModal({ onClose, onRefresh }: ZahtjeviModalProps) {
   const [zahtjevi, setZahtjevi] = useState<Zahtjev[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -38,18 +42,22 @@ export default function ZahtjeviModal({ onClose, onRefresh }: ZahtjeviModalProps
         return;
       }
 
-      // Ispravljena ruta prema app.ts
-      const res = await fetch(`${API_URL}/admin/zahtjevi-za-brisanje`, {
+      const res = await fetch(`${API_URL}/zahtjevi-za-brisanje`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!res.ok) {
-        throw new Error('Greška pri dohvaćanju zahtjeva za brisanje.');
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server nije vratio JSON format.');
       }
 
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Greška pri dohvaćanju zahtjeva.');
+      }
+
       setZahtjevi(data);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -68,13 +76,11 @@ export default function ZahtjeviModal({ onClose, onRefresh }: ZahtjeviModalProps
     });
   }, [ucitajZahtjeve]);
 
-  // Obrada odluke (Prihvatanje ili Odbijanje preko jedinstvene backend rute)
   const handleOdluka = async (id: number, prihvaceno: boolean) => {
     setProcessingId(id);
     try {
       const token = localStorage.getItem('token');
-      // Ispravljena ruta prema app.ts (/admin/zahtjevi-za-brisanje/:id/odluka)
-      const res = await fetch(`${API_URL}/admin/zahtjevi-za-brisanje/${id}/odluka`, {
+      const res = await fetch(`${API_URL}/zahtjevi-za-brisanje/${id}/odluka`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,11 +89,16 @@ export default function ZahtjeviModal({ onClose, onRefresh }: ZahtjeviModalProps
         body: JSON.stringify({ prihvaceno }),
       });
 
-      if (!res.ok) {
-        throw new Error('Greška pri obradi odluke.');
+      const contentType = res.headers.get('content-type');
+      let data: ErrorResponse = {};
+      if (contentType && contentType.includes('application/json')) {
+        data = await res.json();
       }
 
-      // Ukloni iz lokalnog stanja
+      if (!res.ok) {
+        throw new Error(data.error || 'Greška pri obradi odluke.');
+      }
+
       setZahtjevi((prev) => prev.filter((z) => z.id !== id));
       if (onRefresh) onRefresh();
     } catch (err: unknown) {

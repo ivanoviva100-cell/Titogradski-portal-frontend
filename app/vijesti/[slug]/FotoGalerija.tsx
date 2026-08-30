@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { API_URL } from '@/lib/api'; // Dodajte import API_URL-a
 
 interface FotoGalerijaProps {
   slike: string[];
@@ -13,7 +14,13 @@ export default function FotoGalerija({ slike, naslovVijesti }: FotoGalerijaProps
 
   if (!Array.isArray(slike) || slike.length === 0) return null;
 
-  // Prikazujemo maksimalno 3 slike u redosledu, a ostale su dostupne kroz modal i strelice
+  // Helper za formatiranje putanje slike
+  const getPunaSlikaUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+    return `${API_URL}${url}`;
+  };
+
   const prikazaneSlike = slike.slice(0, 3);
   const imaViskaSlika = slike.length > 3;
 
@@ -51,14 +58,13 @@ export default function FotoGalerija({ slike, naslovVijesti }: FotoGalerijaProps
             className="relative w-full h-48 rounded-lg overflow-hidden shadow-sm border border-gray-200 cursor-pointer group"
           >
             <Image
-              src={slika}
+              src={getPunaSlikaUrl(slika)}
               alt={`${naslovVijesti} - slika ${index + 1}`}
               fill
               sizes="(max-width: 768px) 100vw, 400px"
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
             
-            {/* Ako ima više od 3 slike, na trećoj slici prikaži overlay sa brojem preostalih slika */}
             {index === 2 && imaViskaSlika && (
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                 <span className="text-white font-bold text-base">
@@ -74,7 +80,7 @@ export default function FotoGalerija({ slike, naslovVijesti }: FotoGalerijaProps
         ))}
       </div>
 
-      {/* Lightbox Modal sa strelicama za navigaciju */}
+      {/* Lightbox Modal */}
       {currentIndex !== null && (
         <div 
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
@@ -82,7 +88,6 @@ export default function FotoGalerija({ slike, naslovVijesti }: FotoGalerijaProps
         >
           <div className="relative max-w-5xl w-full h-[85vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
             
-            {/* Dugme za zatvaranje */}
             <button
               onClick={() => setCurrentIndex(null)}
               className="absolute top-4 right-4 text-white bg-black/60 hover:bg-black w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold z-20 transition"
@@ -90,12 +95,10 @@ export default function FotoGalerija({ slike, naslovVijesti }: FotoGalerijaProps
               ✕
             </button>
 
-            {/* Brojač slika */}
             <div className="absolute top-4 left-4 text-white bg-black/60 px-3 py-1.5 rounded text-xs font-semibold z-20">
               {currentIndex + 1} / {slike.length}
             </div>
 
-            {/* Strelica Lijevo */}
             <button
               onClick={handlePrev}
               className="absolute left-2 sm:-left-12 text-white bg-black/60 hover:bg-black w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold z-20 transition"
@@ -103,10 +106,9 @@ export default function FotoGalerija({ slike, naslovVijesti }: FotoGalerijaProps
               ❮
             </button>
 
-            {/* Glavna slika u modalu */}
             <div className="relative w-full h-full">
               <Image
-                src={slike[currentIndex]}
+                src={getPunaSlikaUrl(slike[currentIndex])}
                 alt={`${naslovVijesti} - uvećana slika`}
                 fill
                 sizes="100vw"
@@ -114,7 +116,6 @@ export default function FotoGalerija({ slike, naslovVijesti }: FotoGalerijaProps
               />
             </div>
 
-            {/* Strelica Desno */}
             <button
               onClick={handleNext}
               className="absolute right-2 sm:-right-12 text-white bg-black/60 hover:bg-black w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold z-20 transition"

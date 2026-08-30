@@ -45,6 +45,13 @@ async function getSveVijesti(): Promise<Vijest[]> {
   }
 }
 
+// Helper funkcija za spajanje API_URL-a i putanje slike
+const getPunaSlikaUrl = (url: string) => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:')) return url;
+  return `${API_URL}${url}`;
+};
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -122,7 +129,7 @@ export default async function VijestDetaljPage({ params }: PageProps) {
               <div className="space-y-1.5">
                 <div className="rounded-lg overflow-hidden shadow-md relative w-full h-[450px]">
                   <Image 
-                    src={vijest.slikaUrl} 
+                    src={getPunaSlikaUrl(vijest.slikaUrl)} 
                     alt={vijest.naslov} 
                     fill
                     sizes="(max-width: 768px) 100vw, 800px"
@@ -142,7 +149,7 @@ export default async function VijestDetaljPage({ params }: PageProps) {
             {/* Poziv izdvojene komponente za galeriju */}
             <FotoGalerija slike={vijest.fotoGalerija || []} naslovVijesti={vijest.naslov} />
           
-          <ShareButtons naslov={vijest.naslov} />
+            <ShareButtons naslov={vijest.naslov} />
 
             </article>
           <div className="pt-4">
@@ -165,7 +172,7 @@ export default async function VijestDetaljPage({ params }: PageProps) {
                     {ostalaVijest.slikaUrl && (
                       <div className="relative w-full h-32 overflow-hidden rounded">
                         <Image 
-                          src={ostalaVijest.slikaUrl} 
+                          src={getPunaSlikaUrl(ostalaVijest.slikaUrl)} 
                           alt={ostalaVijest.naslov} 
                           fill
                           sizes="(max-width: 768px) 100vw, 300px"
