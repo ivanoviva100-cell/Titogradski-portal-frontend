@@ -110,18 +110,23 @@ export default function AdminReklamePage() {
         <h1 className="text-2xl font-bold tracking-tight">Upravljanje reklamama</h1>
         <p className="text-sm text-slate-400">Kreirajte, mijenjajte i kontrolišite oglasne pozicije na portalu.</p>
         <div className="text-sm text-slate-400">
-          <table>
-            <tr>
-            <td>top-banner:</td><td>728/90px</td>
-            </tr>
-            <tr>
-             <td>middle-banner:</td><td>728/90px</td>
-             </tr>
-             <tr>
-              <td>sidebar:</td><td>300/250px</td>
-            </tr>
-          </table>
-        </div>
+  <table>
+    <tbody>
+      <tr>
+        <td>top-banner:</td>
+        <td>728/90px</td>
+      </tr>
+      <tr>
+        <td>middle-banner:</td>
+        <td>728/90px</td>
+      </tr>
+      <tr>
+        <td>sidebar:</td>
+        <td>300/250px</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
       </div>
 
       {poruka && (

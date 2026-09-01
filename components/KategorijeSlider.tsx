@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { API_URL } from '@/lib/api';
 
 interface Vijest {
   id: number;
@@ -18,8 +19,14 @@ interface KategorijeSliderProps {
   vijesti: Vijest[];
 }
 
-// Definišemo rubrike izvan komponente da se ne kreiraju iznova pri svakom renderu
 const RUBRIKE = ['Podgorica', 'Politika', 'Ekonomija', 'Kultura', 'Sport', 'Servisne informacije'];
+
+// Helper funkcija za spajanje API_URL-a i putanje slike
+const getPunaSlikaUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:')) return url;
+  return `${API_URL}${url}`;
+};
 
 export default function KategorijeSlider({ vijesti }: KategorijeSliderProps) {
   // Izračunaj datum od prije 1 mjesec (30 dana)
@@ -54,7 +61,22 @@ export default function KategorijeSlider({ vijesti }: KategorijeSliderProps) {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [svjezeVijesti]); // Sada je sve čisto i ispravno
+  }, [svjezeVijesti]);
+
+  // Filtriramo samo one rubrike koje IMAJU bar jednu svježu vijest
+  const aktivneRubrike = RUBRIKE.filter((nazivRubrike) => {
+    const vijestiURubrici = svjezeVijesti.filter((v) => {
+      const katNaziv = v.kategorija?.naziv?.trim().toLowerCase() || '';
+      const trazeniNaziv = nazivRubrike.trim().toLowerCase();
+      return katNaziv === trazeniNaziv;
+    });
+    return vijestiURubrici.length > 0;
+  });
+
+  // Ako nema nijedne rubrike sa vijestima, ne prikazujemo ništa
+  if (aktivneRubrike.length === 0) {
+    return null;
+  }
 
   return (
     <div className="space-y-8">
@@ -62,7 +84,7 @@ export default function KategorijeSlider({ vijesti }: KategorijeSliderProps) {
         Ostale vijesti
       </h2>
 
-      {RUBRIKE.map((nazivRubrike) => {
+      {aktivneRubrike.map((nazivRubrike) => {
         const vijestiURubrici = svjezeVijesti.filter((v) => {
           const katNaziv = v.kategorija?.naziv?.trim().toLowerCase() || '';
           const trazeniNaziv = nazivRubrike.trim().toLowerCase();
@@ -78,18 +100,19 @@ export default function KategorijeSlider({ vijesti }: KategorijeSliderProps) {
               {nazivRubrike}
             </h3>
 
-            {prikazaneVijesti.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {prikazaneVijesti.map((v) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {prikazaneVijesti.map((v) => {
+                const slikaPuna = getPunaSlikaUrl(v.slikaUrl);
+                return (
                   <Link 
                     key={v.id} 
                     href={`/vijesti/${v.slug}`}
                     className="bg-white p-4 rounded border border-white flex gap-3 items-center hover:shadow-md hover:border-blue-400 transition-all group"
                   >
-                    {v.slikaUrl && (
+                    {slikaPuna && (
                       <div className="relative w-24 h-20 shrink-0 overflow-hidden rounded">
                         <Image 
-                          src={v.slikaUrl} 
+                          src={slikaPuna} 
                           alt={v.naslov} 
                           fill
                           sizes="96px"
@@ -106,11 +129,9 @@ export default function KategorijeSlider({ vijesti }: KategorijeSliderProps) {
                       </span>
                     </div>
                   </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-600 italic">Nema novih vijesti u ovoj rubrici za protekli mjesec.</p>
-            )}
+                );
+              })}
+            </div>
           </div>
         );
       })}

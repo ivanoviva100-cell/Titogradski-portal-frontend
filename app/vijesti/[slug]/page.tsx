@@ -3,7 +3,7 @@ import AdPlaceholder from '@/components/AdPlaceholder';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import Image from 'next/image';
-import { API_URL } from '@/lib/api';
+import { API_URL, getVijestPoSlug, getSveVijesti } from '@/lib/api';
 import FotoGalerija from './FotoGalerija';
 import ShareButtons from './ShareButtons';
 import SadrzajTeksta from './SadrzajTeksta';
@@ -32,19 +32,6 @@ interface Vijest {
   autor?: Autor;
 }
 
-async function getSveVijesti(): Promise<Vijest[]> {
-  try {
-    const res = await fetch(`${API_URL}/vijesti`, {
-      cache: 'no-store'
-    });
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (error) {
-    console.error("Greška pri dohvatanju vijesti:", error);
-    return [];
-  }
-}
-
 // Helper funkcija za spajanje API_URL-a i putanje slike
 const getPunaSlikaUrl = (url: string) => {
   if (!url) return '';
@@ -60,8 +47,16 @@ export default async function VijestDetaljPage({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
 
-  const sveVijesti = await getSveVijesti();
-  const vijest = sveVijesti.find((v) => v.slug === slug);
+  // 1. Dohvatamo specifičnu vijest po slug-u (Ovo sada aktivira backend rutu i povećava broj pregleda!)
+  let vijest: Vijest | null = null;
+  try {
+    vijest = await getVijestPoSlug(slug);
+  } catch (error) {
+    console.error("Greška pri dohvatanju vijesti:", error);
+  }
+
+  // 2. Dohvatamo sve vijesti da bismo mogli da izdvojimo "Ostale vijesti iz rubrike"
+  const sveVijesti = await getSveVijesti().catch(() => []);
 
   if (!vijest) {
     return (
@@ -83,7 +78,7 @@ export default async function VijestDetaljPage({ params }: PageProps) {
 
   const ostaleIzRubrike = sveVijesti
     .filter(
-      (v) => 
+      (v: Vijest) => 
         v.kategorija?.id === vijest.kategorija?.id && 
         v.id !== vijest.id
     )
@@ -151,7 +146,7 @@ export default async function VijestDetaljPage({ params }: PageProps) {
           
             <ShareButtons naslov={vijest.naslov} />
 
-            </article>
+          </article>
           <div className="pt-4">
             <AdPlaceholder type="banner-middle" link="https://drugi-partner.com"/>
           </div>
@@ -163,7 +158,7 @@ export default async function VijestDetaljPage({ params }: PageProps) {
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {ostaleIzRubrike.map((ostalaVijest) => (
+                {ostaleIzRubrike.map((ostalaVijest: Vijest) => (
                   <Link 
                     key={ostalaVijest.id} 
                     href={`/vijesti/${ostalaVijest.slug}`}

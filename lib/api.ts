@@ -96,6 +96,10 @@ export async function obrisiVijest(id: number) {
   });
 }
 
+export async function getVijestPoSlug(slug: string) {
+  return apiFetch(`/vijesti/${slug}`);
+}
+
 // Kategorije
 export async function getSveKategorije() {
   return apiFetch('/kategorije');

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { API_URL } from '@/lib/api'; // Provjerite da li vam je ovdje definisan API_URL
 
 export interface KategorijaTip {
   id: number;
@@ -20,24 +21,32 @@ export interface VijestTip {
 interface VijestKarticaProps {
   vijest: VijestTip;
   varijanta?: 'velika' | 'mala';
-  priority?: boolean; // 1. Samo tip definisan u interfejsu
+  priority?: boolean;
 }
+
+// Helper funkcija za spajanje API_URL-a i putanje slike
+const getPunaSlikaUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:')) return url;
+  return `${API_URL}${url}`;
+};
 
 export default function VijestKartica({ 
   vijest, 
   varijanta = 'mala', 
-  priority = false // 2. Ovdje se postavlja podrazumijevana vrijednost
+  priority = false 
 }: VijestKarticaProps) {
   
   const href = `/vijesti/${vijest.slug || vijest.id}`;
+  const konacniSlikaUrl = getPunaSlikaUrl(vijest.slikaUrl);
 
   if (varijanta === 'velika') {
     return (
       <Link href={href} className="group relative block w-full h-full min-h-80 rounded-lg overflow-hidden bg-gray-900 shadow-md">
-        {vijest.slikaUrl ? (
+        {konacniSlikaUrl ? (
           <div className="absolute inset-0 overflow-hidden">
             <Image 
-              src={vijest.slikaUrl} 
+              src={konacniSlikaUrl} 
               alt={vijest.naslov || 'Vijest'} 
               fill
               sizes="(max-width: 768px) 100vw, 600px"
@@ -46,7 +55,7 @@ export default function VijestKartica({
             />
           </div>
         ) : (
-          <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
         )}
         <div className="absolute bottom-0 inset-x-0 p-6 z-10 text-white space-y-2">
           {vijest.kategorija && (
@@ -68,10 +77,10 @@ export default function VijestKartica({
   return (
     <Link href={href} className="group flex flex-col h-full bg-white rounded-md overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition">
       <div className="h-36 bg-gray-100 overflow-hidden relative">
-        {vijest.slikaUrl ? (
+        {konacniSlikaUrl ? (
           <div className="relative w-full h-full overflow-hidden">
             <Image 
-              src={vijest.slikaUrl} 
+              src={konacniSlikaUrl} 
               alt={vijest.naslov || 'Vijest'} 
               fill
               sizes="(max-width: 768px) 100vw, 400px"

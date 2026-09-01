@@ -263,12 +263,48 @@ export default function VijestiPage() {
     }
   };
 
+  // Brza izmjena pozicije vijesti direktno iz tabele
+const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
+  setPoruka(null);
+  try {
+    // Ažuriramo samo poziciju hero, a ostale podatke zadržavamo
+    const vijestZaIzmjenu = vijesti.find((v) => v.id === id);
+    if (!vijestZaIzmjenu) return;
+
+    const payload = {
+      naslov: vijestZaIzmjenu.naslov,
+      podnaslov: vijestZaIzmjenu.podnaslov,
+      sadrzaj: vijestZaIzmjenu.sadrzaj,
+      slug: vijestZaIzmjenu.slug,
+      slikaUrl: vijestZaIzmjenu.slikaUrl,
+      slikaOpis: vijestZaIzmjenu.slikaOpis,
+      fotoGalerija: vijestZaIzmjenu.fotoGalerija || [],
+      kategorijaId: vijestZaIzmjenu.kategorija.id,
+      pozicijaHero: novaPozicija,
+      autorId: vijestZaIzmjenu.autor?.id,
+    };
+
+    await azurirajVijest(id, payload);
+
+    // Lokalno ažuriranje state-a da se odmah vidi promjena
+    setVijesti((prev) =>
+      prev.map((v) => (v.id === id ? { ...v, pozicijaHero: novaPozicija } : v))
+    );
+    setPoruka({ tekst: 'Pozicija vijesti je uspješno ažurirana.', tip: 'success' });
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      setPoruka({ tekst: err.message, tip: 'error' });
+    } else {
+      setPoruka({ tekst: 'Došlo je do greške pri izmjeni pozicije.', tip: 'error' });
+    }
+  }
+};
+
   const handleObrisi = async (id: number) => {
     const korisnikRaw = localStorage.getItem('korisnik');
     const korisnik = korisnikRaw ? JSON.parse(korisnikRaw) : null;
     const isAdmin = korisnik?.uloga === 'ADMIN';
 
-    // 1. AKO JE ADMIN: Briše direktno bez zahtjeva
     if (isAdmin) {
       if (!confirm('Da li ste sigurni da želite da trajno obrišete ovu vijest?')) return;
 
@@ -300,7 +336,6 @@ export default function VijestiPage() {
 
     try {
       const token = localStorage.getItem('token');
-      // OBAVEZNO dodan ${API_URL} da gađa Express backend umjesto Next.js-a
       const res = await fetch(`${API_URL}/zahtjevi-za-brisanje`, {
         method: 'POST',
         headers: {
@@ -396,74 +431,93 @@ export default function VijestiPage() {
             <p className="text-gray-500 text-sm py-4">Učitavanje vijesti iz baze...</p>
           ) : (
             <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
-                <tr>
-                  <th className="px-4 py-3">Slika</th>
-                  <th className="px-4 py-3">Naslov</th>
-                  <th className="px-4 py-3">Kategorija</th>
-                  <th className="px-4 py-3">Autor</th>
-                  <th className="px-4 py-3">Pregledi</th>
-                  <th className="px-4 py-3">Datum</th>
-                  <th className="px-4 py-3 text-right">Akcije</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filtriraneVijesti.map((v) => (
-                  <tr key={v.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      {v.slikaUrl ? (
-                        <div className="relative w-12 h-10 overflow-hidden rounded shadow-sm">
-                          <Image 
-                            src={getPunaSlikaUrl(v.slikaUrl)} 
-                            alt={v.naslov} 
-                            fill
-                            sizes="48px"
-                            className="object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">Nema</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-900 max-w-md truncate">{v.naslov}</td>
-                    <td className="px-4 py-3">
-                      <span className="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded">
-                        {v.kategorija?.naziv || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">{v.autor?.imePrezime || 'Nepoznato'}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-800">
-                      {v.brojPregleda ?? 0}
-                    </td>
-                    <td className="px-4 py-3">
-                      {new Date(v.datumKreiranja).toLocaleDateString('sr-ME')}
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-3">
-                      <button
-                        onClick={() => handleOpenEditModal(v)}
-                        className="text-blue-600 hover:underline text-xs font-medium"
-                      >
-                        Uredi
-                      </button>
-                      <button
-                        onClick={() => handleObrisi(v.id)}
-                        disabled={deletingId === v.id}
-                        className="text-red-600 hover:underline text-xs font-medium disabled:opacity-50"
-                      >
-                        {deletingId === v.id ? 'Obrada...' : 'Obriši'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {filtriraneVijesti.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
-                      Nije pronađena nijedna vijest.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+  <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+    <tr>
+      <th className="px-4 py-3">Slika</th>
+      <th className="px-4 py-3">Naslov</th>
+      <th className="px-4 py-3">Kategorija</th>
+      <th className="px-4 py-3">Pozicija</th>
+      <th className="px-4 py-3">Autor</th>
+      <th className="px-4 py-3">Pregledi</th>
+      <th className="px-4 py-3">Datum</th>
+      <th className="px-4 py-3 text-right">Akcije</th>
+    </tr>
+  </thead>
+  <tbody className="divide-y divide-gray-200">
+    {filtriraneVijesti.map((v) => (
+      <tr key={v.id} className="hover:bg-gray-50">
+        <td className="px-4 py-3">
+          {v.slikaUrl ? (
+            <div className="relative w-12 h-10 overflow-hidden rounded shadow-sm">
+              <Image 
+                src={getPunaSlikaUrl(v.slikaUrl)} 
+                alt={v.naslov} 
+                fill
+                sizes="48px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400">Nema</span>
+          )}
+        </td>
+        <td className="px-4 py-3 font-medium text-gray-900 max-w-md truncate">{v.naslov}</td>
+        <td className="px-4 py-3">
+          <span className="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded">
+            {v.kategorija?.naziv || 'N/A'}
+          </span>
+        </td>
+        {/* Brzo dugme / select za poziciju */}
+        <td className="px-4 py-3">
+          <select
+            value={v.pozicijaHero || 'STANDARDNA'}
+            onChange={(e) => handlePromijeniPoziciju(v.id, e.target.value)}
+            className={`text-xs px-2 py-1 rounded border font-medium outline-none cursor-pointer ${
+              v.pozicijaHero === 'GLAVNA'
+                ? 'bg-amber-50 text-amber-800 border-amber-300'
+                : v.pozicijaHero === 'SPOREDNA'
+                ? 'bg-blue-50 text-blue-800 border-blue-300'
+                : 'bg-gray-50 text-gray-700 border-gray-300'
+            }`}
+          >
+            <option value="STANDARDNA">Standardna</option>
+            <option value="GLAVNA">Glavna</option>
+            <option value="SPOREDNA">Sporedna</option>
+          </select>
+        </td>
+        <td className="px-4 py-3">{v.autor?.imePrezime || 'Nepoznato'}</td>
+        <td className="px-4 py-3 font-semibold text-gray-800">
+          {v.brojPregleda ?? 0}
+        </td>
+        <td className="px-4 py-3">
+          {new Date(v.datumKreiranja).toLocaleDateString('sr-ME')}
+        </td>
+        <td className="px-4 py-3 text-right space-x-3">
+          <button
+            onClick={() => handleOpenEditModal(v)}
+            className="text-blue-600 hover:underline text-xs font-medium"
+          >
+            Uredi
+          </button>
+          <button
+            onClick={() => handleObrisi(v.id)}
+            disabled={deletingId === v.id}
+            className="text-red-600 hover:underline text-xs font-medium disabled:opacity-50"
+          >
+            {deletingId === v.id ? 'Obrada...' : 'Obriši'}
+          </button>
+        </td>
+      </tr>
+    ))}
+    {filtriraneVijesti.length === 0 && (
+      <tr>
+        <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
+          Nije pronađena nijedna vijest.
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
           )}
         </div>
       </div>
