@@ -47,7 +47,7 @@ export default async function VijestDetaljPage({ params }: PageProps) {
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
 
-  // 1. Dohvatamo specifičnu vijest po slug-u (Ovo sada aktivira backend rutu i povećava broj pregleda!)
+  // 1. Dohvatamo specifičnu vijest po slug-u
   let vijest: Vijest | null = null;
   try {
     vijest = await getVijestPoSlug(slug);
@@ -55,7 +55,6 @@ export default async function VijestDetaljPage({ params }: PageProps) {
     console.error("Greška pri dohvatanju vijesti:", error);
   }
 
-  // 2. Dohvatamo sve vijesti da bismo mogli da izdvojimo "Ostale vijesti iz rubrike"
   const sveVijesti = await getSveVijesti().catch(() => []);
 
   if (!vijest) {
@@ -141,7 +140,6 @@ export default async function VijestDetaljPage({ params }: PageProps) {
 
             <SadrzajTeksta sadrzaj={vijest.sadrzaj} />
 
-            {/* Poziv izdvojene komponente za galeriju */}
             <FotoGalerija slike={vijest.fotoGalerija || []} naslovVijesti={vijest.naslov} />
           
             <ShareButtons naslov={vijest.naslov} />

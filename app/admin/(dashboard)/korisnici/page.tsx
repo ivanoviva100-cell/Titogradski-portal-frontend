@@ -1,6 +1,7 @@
 'use client';
-import { API_URL } from '@/lib/api';
+
 import { useState, useEffect, FormEvent } from 'react';
+import { API_URL } from '@/lib/api';
 
 interface Korisnik {
   id: number;
@@ -102,14 +103,12 @@ export default function KorisniciPage() {
     }
   };
 
-  // Pokretanje modala za uređivanje
   const otvoriUredjivanje = (korisnik: Korisnik) => {
     setUrediKorisnika(korisnik);
     setUrediImePrezime(korisnik.imePrezime);
     setUrediUloga(korisnik.uloga as 'ADMIN' | 'NOVINAR');
   };
 
-  // Čuvanje izmjena (ime/prezime ili nik)
   const handleAzurirajKorisnika = async (e: FormEvent) => {
     e.preventDefault();
     if (!urediKorisnika) return;
@@ -157,53 +156,48 @@ export default function KorisniciPage() {
     }
   };
 
-  if (loading) return <div className="p-8 max-w-7xl mx-auto text-gray-500">Učitavanje...</div>;
-  if (error) return <div className="p-8 max-w-7xl mx-auto text-red-600">{error}</div>;
+  if (loading) return <div className="p-8 max-w-7xl mx-auto text-gray-500 text-sm">Učitavanje...</div>;
+  if (error) return <div className="p-8 max-w-7xl mx-auto text-red-600 text-sm">{error}</div>;
 
   return (
-    <main className="p-8 space-y-6 max-w-7xl mx-auto w-full">
-      <div className="flex justify-between items-center">
+    <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Korisnici</h1>
-          <p className="text-sm text-gray-500">Pregled i upravljanje registrovanim korisnicima sistema.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Korisnici</h1>
+          <p className="text-xs sm:text-sm text-gray-500">Pregled i upravljanje registrovanim korisnicima sistema.</p>
         </div>
 
         {jeAdmin && (
           <button
             onClick={() => setPrikaziModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition self-start sm:self-auto"
           >
             + Novi Korisnik
           </button>
         )}
       </div>
 
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
-              <tr>
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Ime / Pseudonim</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Uloga</th>
-                <th className="px-4 py-3">Datum registracije</th>
-                <th className="px-4 py-3 text-right">Akcije</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
+      <div className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm">
+        {korisnici.length === 0 ? (
+          <p className="text-center py-6 text-gray-400 text-sm">Nema registrovanih korisnika.</p>
+        ) : (
+          <>
+            {/* MOBILNI PRIKAZ (Kartice) */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
               {korisnici.map((korisnik) => {
                 const jeLiTrenutni = korisnik.id === trenutniKorisnik.id;
                 return (
-                  <tr key={korisnik.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-400">#{korisnik.id}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {korisnik.imePrezime} {jeLiTrenutni && <span className="text-xs text-gray-400">(Vi)</span>}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{korisnik.email}</td>
-                    <td className="px-4 py-3">
+                  <div key={korisnik.id} className="border border-gray-200 rounded-lg p-4 bg-white space-y-3 shadow-xs">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <span className="font-mono text-xs text-gray-400 block">#{korisnik.id}</span>
+                        <span className="font-semibold text-gray-900 text-sm">
+                          {korisnik.imePrezime} {jeLiTrenutni && <span className="text-xs text-gray-400">(Vi)</span>}
+                        </span>
+                        <span className="text-xs text-gray-500 block">{korisnik.email}</span>
+                      </div>
                       <span
-                        className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                           korisnik.uloga === 'ADMIN'
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-blue-100 text-blue-700'
@@ -211,48 +205,112 @@ export default function KorisniciPage() {
                       >
                         {korisnik.uloga}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">
-                      {new Date(korisnik.datumKreiranja).toLocaleDateString('sr-RS')}
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      {jeAdmin ? (
-                        <>
+                    </div>
+
+                    <div className="text-xs text-gray-400 pt-1 border-t border-gray-100 flex justify-between items-center">
+                      <span>Registracija: {new Date(korisnik.datumKreiranja).toLocaleDateString('sr-RS')}</span>
+                    </div>
+
+                    {jeAdmin ? (
+                      <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                        <button
+                          onClick={() => otvoriUredjivanje(korisnik)}
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-md text-xs font-medium transition flex-1 text-center"
+                        >
+                          Uredi
+                        </button>
+                        {!jeLiTrenutni && (
                           <button
-                            onClick={() => otvoriUredjivanje(korisnik)}
-                            className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1.5 rounded text-xs font-medium transition"
+                            onClick={() => handleObrisi(korisnik.id)}
+                            className="bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-md text-xs font-medium transition flex-1 text-center"
                           >
-                            Uredi
+                            Obriši
                           </button>
-                          {!jeLiTrenutni && (
-                            <button
-                              onClick={() => handleObrisi(korisnik.id)}
-                              className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded text-xs font-medium transition"
-                            >
-                              Obriši
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
-                    </td>
-                  </tr>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            {/* DESKTOP PRIKAZ (Tabela) */}
+            <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">ID</th>
+                    <th className="px-4 py-3">Ime / Pseudonim</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Uloga</th>
+                    <th className="px-4 py-3">Datum registracije</th>
+                    <th className="px-4 py-3 text-right">Akcije</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {korisnici.map((korisnik) => {
+                    const jeLiTrenutni = korisnik.id === trenutniKorisnik.id;
+                    return (
+                      <tr key={korisnik.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-mono text-xs text-gray-400">#{korisnik.id}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">
+                          {korisnik.imePrezime} {jeLiTrenutni && <span className="text-xs text-gray-400">(Vi)</span>}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{korisnik.email}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`text-xs px-2.5 py-1 rounded-full font-semibold inline-block ${
+                              korisnik.uloga === 'ADMIN'
+                                ? 'bg-purple-100 text-purple-700'
+                                : 'bg-blue-100 text-blue-700'
+                            }`}
+                          >
+                            {korisnik.uloga}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">
+                          {new Date(korisnik.datumKreiranja).toLocaleDateString('sr-RS')}
+                        </td>
+                        <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                          {jeAdmin ? (
+                            <>
+                              <button
+                                onClick={() => otvoriUredjivanje(korisnik)}
+                                className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1.5 rounded text-xs font-medium transition"
+                              >
+                                Uredi
+                              </button>
+                              {!jeLiTrenutni && (
+                                <button
+                                  onClick={() => handleObrisi(korisnik.id)}
+                                  className="bg-red-50 text-red-700 hover:bg-red-100 px-3 py-1.5 rounded text-xs font-medium transition"
+                                >
+                                  Obriši
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* MODAL ZA DODAVANJE KORISNIKA */}
       {prikaziModal && jeAdmin && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full space-y-4 shadow-xl">
+          <div className="bg-white p-6 rounded-xl max-w-md w-full space-y-4 shadow-xl">
             <h2 className="text-lg font-bold text-gray-900">Dodaj novog korisnika</h2>
 
             {formaGreska && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-md">
                 {formaGreska}
               </div>
             )}
@@ -266,7 +324,7 @@ export default function KorisniciPage() {
                   value={imePrezime}
                   onChange={(e) => setImePrezime(e.target.value)}
                   placeholder="Npr. Petar Petrović ili Anonimni Novinar"
-                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
 
@@ -277,7 +335,7 @@ export default function KorisniciPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
 
@@ -288,7 +346,7 @@ export default function KorisniciPage() {
                   required
                   value={lozinka}
                   onChange={(e) => setLozinka(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
 
@@ -297,7 +355,7 @@ export default function KorisniciPage() {
                 <select
                   value={uloga}
                   onChange={(e) => setUloga(e.target.value as 'ADMIN' | 'NOVINAR')}
-                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="NOVINAR">NOVINAR</option>
                   <option value="ADMIN">ADMIN</option>
@@ -308,14 +366,14 @@ export default function KorisniciPage() {
                 <button
                   type="button"
                   onClick={() => setPrikaziModal(false)}
-                  className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition"
+                  className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition text-sm"
                 >
                   Otkaži
                 </button>
                 <button
                   type="submit"
                   disabled={formaLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition text-sm"
                 >
                   {formaLoading ? 'Spremanje...' : 'Sačuvaj'}
                 </button>
@@ -328,7 +386,7 @@ export default function KorisniciPage() {
       {/* MODAL ZA UREĐIVANJE IMENA / NIKA KORISNIKA */}
       {urediKorisnika && jeAdmin && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full space-y-4 shadow-xl">
+          <div className="bg-white p-6 rounded-xl max-w-md w-full space-y-4 shadow-xl">
             <h2 className="text-lg font-bold text-gray-900">Uredi podatke korisnika</h2>
             <p className="text-xs text-gray-500">Možete izmijeniti ime i prezime ili unijeti nik/pseudonim za anonimnost.</p>
 
@@ -341,7 +399,7 @@ export default function KorisniciPage() {
                   value={urediImePrezime}
                   onChange={(e) => setUrediImePrezime(e.target.value)}
                   placeholder="Unesite pravo ime ili nik (npr. Redakcija)"
-                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
 
@@ -350,7 +408,7 @@ export default function KorisniciPage() {
                 <select
                   value={urediUloga}
                   onChange={(e) => setUrediUloga(e.target.value as 'ADMIN' | 'NOVINAR')}
-                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-md text-black focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 >
                   <option value="NOVINAR">NOVINAR</option>
                   <option value="ADMIN">ADMIN</option>
@@ -361,14 +419,14 @@ export default function KorisniciPage() {
                 <button
                   type="button"
                   onClick={() => setUrediKorisnika(null)}
-                  className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition"
+                  className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-50 transition text-sm"
                 >
                   Otkaži
                 </button>
                 <button
                   type="submit"
                   disabled={urediLoading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition text-sm"
                 >
                   {urediLoading ? 'Ažuriranje...' : 'Sačuvaj izmjene'}
                 </button>

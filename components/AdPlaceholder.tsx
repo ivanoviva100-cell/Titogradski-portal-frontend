@@ -1,9 +1,12 @@
+'use client';
+
 import Image from 'next/image';
 import { API_URL } from '@/lib/api';
+import { useState, useEffect } from 'react';
 
 interface AdPlaceholderProps {
   type: 'banner-top' | 'banner-middle' | 'sidebar';
-  link?: string; // <--- Dodano da spriječi TypeScript grešku
+  link?: string;
 }
 
 interface Reklama {
@@ -15,50 +18,49 @@ interface Reklama {
   aktivna: boolean;
 }
 
-async function getReklama(pozicija: string): Promise<Reklama | null> {
-  try {
-    const res = await fetch(`${API_URL}/reklame?pozicija=${pozicija}&aktivna=true`, {
-      cache: 'no-store',
-    });
-    if (!res.ok) return null;
-    const data: Reklama[] = await res.json();
-    return data.length > 0 ? data[0] : null;
-  } catch (error) {
-    console.error("Greška pri dohvatanju reklame:", error);
+export default function AdPlaceholder({ type, link: propLink }: AdPlaceholderProps) {
+  const [reklama, setReklama] = useState<Reklama | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchReklama() {
+      try {
+        const res = await fetch(`${API_URL}/reklame?pozicija=${type}&aktivna=true`);
+        if (res.ok) {
+          const data: Reklama[] = await res.json();
+          if (data.length > 0) {
+            setReklama(data[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Greška pri dohvatanju reklame:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchReklama();
+  }, [type]);
+
+  if (loading || !reklama?.slikaUrl) {
     return null;
   }
-}
 
-export default async function AdPlaceholder({ type, link: propLink }: AdPlaceholderProps) {
-  const reklama = await getReklama(type);
+  const slikaUrl = reklama.slikaUrl;
+  const linkUrl = reklama.linkUrl || propLink;
 
-  // Određujemo sliku i link (prioritet imaju podaci iz baze, a fallback je prop ili generički prikaz)
-  const slikaUrl = reklama?.slikaUrl;
-  const linkUrl = reklama?.linkUrl || propLink;
-
-  // UKOLIKO NEMA AKTIVNE REKLAME NI SLIKE, VRATI NULL (NE PRIKAZUJ NIŠTA)
-  if (!slikaUrl) {
-    return null;
-  }
-
-  const content = slikaUrl ? (
-  <div className={`relative rounded overflow-hidden shadow-sm mx-auto ${
-    type === 'sidebar' ? 'w-[300px] h-[250px] sm:h-[600px]' : 'w-full max-w-[728px] h-[90px] sm:h-[90px]'
-  }`}>
-    <Image 
-      src={slikaUrl} 
-      alt={reklama?.naziv || 'Reklama'} 
-      fill
-      className="object-cover"
-    />
-  </div>
-) : (
-  <div className={`bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 text-sm rounded overflow-hidden relative mx-auto ${
-    type === 'sidebar' ? 'w-[300px] h-[250px] sm:h-[600px]' : 'w-full max-w-[728px] h-[90px]'
-  }`}>
-    <span>Reklama ({type}) - Standardni format</span>
-  </div>
-);
+  const content = (
+    <div className={`relative rounded overflow-hidden shadow-sm mx-auto ${
+      type === 'sidebar' ? 'w-[300px] h-[250px] sm:h-[600px]' : 'w-full max-w-[728px] h-[90px] sm:h-[90px]'
+    }`}>
+      <Image 
+        src={slikaUrl} 
+        alt={reklama.naziv || 'Reklama'} 
+        fill
+        className="object-cover"
+      />
+    </div>
+  );
 
   if (linkUrl) {
     return (

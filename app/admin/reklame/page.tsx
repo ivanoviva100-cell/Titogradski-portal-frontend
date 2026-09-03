@@ -105,28 +105,30 @@ export default function AdminReklamePage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto text-slate-100">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6 text-slate-100">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Upravljanje reklamama</h1>
-        <p className="text-sm text-slate-400">Kreirajte, mijenjajte i kontrolišite oglasne pozicije na portalu.</p>
-        <div className="text-sm text-slate-400">
-  <table>
-    <tbody>
-      <tr>
-        <td>top-banner:</td>
-        <td>728/90px</td>
-      </tr>
-      <tr>
-        <td>middle-banner:</td>
-        <td>728/90px</td>
-      </tr>
-      <tr>
-        <td>sidebar:</td>
-        <td>300/250px</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Upravljanje reklamama</h1>
+        <p className="text-xs sm:text-sm text-slate-400">Kreirajte, mijenjajte i kontrolišite oglasne pozicije na portalu.</p>
+        
+        <div className="mt-4 text-xs text-slate-400 bg-slate-900 border border-slate-800 p-3 rounded-lg max-w-xs">
+          <p className="font-semibold text-slate-300 mb-1">Dimenzije banera:</p>
+          <table className="w-full">
+            <tbody>
+              <tr>
+                <td className="py-0.5 text-slate-400">top-banner:</td>
+                <td className="py-0.5 text-right font-mono text-slate-200">728 / 90px</td>
+              </tr>
+              <tr>
+                <td className="py-0.5 text-slate-400">middle-banner:</td>
+                <td className="py-0.5 text-right font-mono text-slate-200">728 / 90px</td>
+              </tr>
+              <tr>
+                <td className="py-0.5 text-slate-400">sidebar:</td>
+                <td className="py-0.5 text-right font-mono text-slate-200">300 / 250px</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {poruka && (
@@ -136,7 +138,8 @@ export default function AdminReklamePage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 h-fit shadow-sm">
+        {/* FORMA */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-6 h-fit shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-white">
             {editId !== null ? 'Izmjeni reklamu' : 'Dodaj novu reklamu'}
           </h2>
@@ -228,79 +231,134 @@ export default function AdminReklamePage() {
           </form>
         </div>
 
+        {/* LISTA REKLAMA */}
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
           <div className="p-4 border-b border-slate-800 flex justify-between items-center">
             <h2 className="text-lg font-semibold text-white">Postojeće reklame</h2>
             <span className="text-xs text-slate-400">Ukupno: {reklame.length}</span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase bg-slate-950/50">
-                  <th className="p-4">Naziv / Pozicija</th>
-                  <th className="p-4">Pregled</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Akcije</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 text-sm">
-                {reklame.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="p-6 text-center text-slate-500">Nema kreiranih reklama.</td>
-                  </tr>
-                ) : (
-                  reklame.map((reklama) => (
-                    <tr key={reklama.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="p-4">
-                        <p className="font-medium text-white">{reklama.naziv}</p>
+          {reklame.length === 0 ? (
+            <p className="p-6 text-center text-slate-500 text-sm">Nema kreiranih reklama.</p>
+          ) : (
+            <>
+              {/* MOBILNI PRIKAZ (Kartice) */}
+              <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+                {reklame.map((reklama) => (
+                  <div key={reklama.id} className="border border-slate-800 rounded-lg p-4 bg-slate-950/40 space-y-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <p className="font-medium text-white text-sm">{reklama.naziv}</p>
                         <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-blue-400 uppercase tracking-wider">
                           {reklama.pozicija}
                         </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="w-24 h-12 bg-slate-950 border border-slate-800 rounded overflow-hidden relative flex items-center justify-center">
-                          {reklama.slikaUrl ? (
-                            <Image 
-                              src={reklama.slikaUrl} 
-                              alt={reklama.naziv} 
-                              fill
-                              sizes="96px"
-                              className="object-cover" 
-                            />
-                          ) : (
-                            <span className="text-[10px] text-slate-600">Nema slike</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          reklama.aktivna ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${reklama.aktivna ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-                          {reklama.aktivna ? 'Aktivna'  : 'Pauzirana'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right space-x-2">
-                        <button
-                          onClick={() => handleEdit(reklama)}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors"
-                        >
-                          Uredi
-                        </button>
-                        <button
-                          onClick={() => handleDelete(reklama.id)}
-                          className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-colors"
-                        >
-                          Obriši
-                        </button>
-                      </td>
+                      </div>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${
+                        reklama.aktivna ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${reklama.aktivna ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                        {reklama.aktivna ? 'Aktivna' : 'Pauzirana'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="w-28 h-14 bg-slate-950 border border-slate-800 rounded overflow-hidden relative flex items-center justify-center">
+                        {reklama.slikaUrl ? (
+                          <Image 
+                            src={reklama.slikaUrl} 
+                            alt={reklama.naziv} 
+                            fill
+                            sizes="112px"
+                            className="object-cover" 
+                          />
+                        ) : (
+                          <span className="text-[10px] text-slate-600">Nema slike</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-3 border-t border-slate-800/80">
+                      <button
+                        onClick={() => handleEdit(reklama)}
+                        className="flex-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors text-center"
+                      >
+                        Uredi
+                      </button>
+                      <button
+                        onClick={() => handleDelete(reklama.id)}
+                        className="flex-1 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-colors text-center"
+                      >
+                        Obriši
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* DESKTOP PRIKAZ (Tabela) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase bg-slate-950/50">
+                      <th className="p-4">Naziv / Pozicija</th>
+                      <th className="p-4">Pregled</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 text-right">Akcije</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800 text-sm">
+                    {reklame.map((reklama) => (
+                      <tr key={reklama.id} className="hover:bg-slate-800/40 transition-colors">
+                        <td className="p-4">
+                          <p className="font-medium text-white">{reklama.naziv}</p>
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-blue-400 uppercase tracking-wider">
+                            {reklama.pozicija}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="w-24 h-12 bg-slate-950 border border-slate-800 rounded overflow-hidden relative flex items-center justify-center">
+                            {reklama.slikaUrl ? (
+                              <Image 
+                                src={reklama.slikaUrl} 
+                                alt={reklama.naziv} 
+                                fill
+                                sizes="96px"
+                                className="object-cover" 
+                              />
+                            ) : (
+                              <span className="text-[10px] text-slate-600">Nema slike</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                            reklama.aktivna ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${reklama.aktivna ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                            {reklama.aktivna ? 'Aktivna'  : 'Pauzirana'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                          <button
+                            onClick={() => handleEdit(reklama)}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors"
+                          >
+                            Uredi
+                          </button>
+                          <button
+                            onClick={() => handleDelete(reklama.id)}
+                            className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs font-medium transition-colors"
+                          >
+                            Obriši
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

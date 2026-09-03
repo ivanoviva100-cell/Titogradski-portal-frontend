@@ -40,6 +40,7 @@ export default function VijestiPage() {
   const [error, setError] = useState('');
   const [poruka, setPoruka] = useState<{ tekst: string; tip: 'info' | 'success' | 'error' } | null>(null);
   const [pretraga, setPretraga] = useState('');
+  const [izabranaKategorijaFilter, setIzabranaKategorijaFilter] = useState('');
 
   // Stanja za Modal, Formu i Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,7 +66,6 @@ export default function VijestiPage() {
     pozicijaHero: 'STANDARDNA',
   });
 
-  // Helper funkcija za spajanje API_URL-a i relativne putanje slike iz baze
   const getPunaSlikaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('blob:')) return url;
@@ -97,7 +97,6 @@ export default function VijestiPage() {
     });
   }, [ucitajPodatke]);
 
-  // Otvaranje modala za NOVU vijest
   const handleOpenCreateModal = () => {
     setSelectedVijestId(null);
     setForma({
@@ -117,7 +116,6 @@ export default function VijestiPage() {
     setIsModalOpen(true);
   };
 
-  // Otvaranje modala za IZMJENU postojeće vijesti
   const handleOpenEditModal = (vijest: Vijest) => {
     const postojecaGalerija = Array.isArray(vijest.fotoGalerija)
       ? vijest.fotoGalerija
@@ -164,7 +162,6 @@ export default function VijestiPage() {
     }));
   };
 
-  // Slanje forme (Create ili Update)
   const handleSačuvajVijest = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -178,7 +175,6 @@ export default function VijestiPage() {
       setSubmitting(true);
       let konačniSlikaUrl = forma.slikaUrl;
 
-      // 1. Upload glavne slike ako je izabrana nova
       if (slikaFajl) {
         setUploadingImage(true);
         const formData = new FormData();
@@ -204,7 +200,6 @@ export default function VijestiPage() {
         return;
       }
 
-      // 2. Upload dodatnih slika za foto galeriju (ako postoje novi fajlovi)
       const konacnaGalerija = [...forma.fotoGalerija];
       if (galerijaFajlovi.length > 0) {
         setUploadingImage(true);
@@ -226,7 +221,7 @@ export default function VijestiPage() {
 
       setUploadingImage(false);
 
-      const korisnikRaw = localStorage.getItem('korisnik');
+      const korisnikRaw = typeof window !== 'undefined' ? localStorage.getItem('korisnik') : null;
       const korisnik = korisnikRaw ? JSON.parse(korisnikRaw) : null;
 
       const payload = {
@@ -263,45 +258,42 @@ export default function VijestiPage() {
     }
   };
 
-  // Brza izmjena pozicije vijesti direktno iz tabele
-const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
-  setPoruka(null);
-  try {
-    // Ažuriramo samo poziciju hero, a ostale podatke zadržavamo
-    const vijestZaIzmjenu = vijesti.find((v) => v.id === id);
-    if (!vijestZaIzmjenu) return;
+  const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
+    setPoruka(null);
+    try {
+      const vijestZaIzmjenu = vijesti.find((v) => v.id === id);
+      if (!vijestZaIzmjenu) return;
 
-    const payload = {
-      naslov: vijestZaIzmjenu.naslov,
-      podnaslov: vijestZaIzmjenu.podnaslov,
-      sadrzaj: vijestZaIzmjenu.sadrzaj,
-      slug: vijestZaIzmjenu.slug,
-      slikaUrl: vijestZaIzmjenu.slikaUrl,
-      slikaOpis: vijestZaIzmjenu.slikaOpis,
-      fotoGalerija: vijestZaIzmjenu.fotoGalerija || [],
-      kategorijaId: vijestZaIzmjenu.kategorija.id,
-      pozicijaHero: novaPozicija,
-      autorId: vijestZaIzmjenu.autor?.id,
-    };
+      const payload = {
+        naslov: vijestZaIzmjenu.naslov,
+        podnaslov: vijestZaIzmjenu.podnaslov,
+        sadrzaj: vijestZaIzmjenu.sadrzaj,
+        slug: vijestZaIzmjenu.slug,
+        slikaUrl: vijestZaIzmjenu.slikaUrl,
+        slikaOpis: vijestZaIzmjenu.slikaOpis,
+        fotoGalerija: vijestZaIzmjenu.fotoGalerija || [],
+        kategorijaId: vijestZaIzmjenu.kategorija.id,
+        pozicijaHero: novaPozicija,
+        autorId: vijestZaIzmjenu.autor?.id,
+      };
 
-    await azurirajVijest(id, payload);
+      await azurirajVijest(id, payload);
 
-    // Lokalno ažuriranje state-a da se odmah vidi promjena
-    setVijesti((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, pozicijaHero: novaPozicija } : v))
-    );
-    setPoruka({ tekst: 'Pozicija vijesti je uspješno ažurirana.', tip: 'success' });
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      setPoruka({ tekst: err.message, tip: 'error' });
-    } else {
-      setPoruka({ tekst: 'Došlo je do greške pri izmjeni pozicije.', tip: 'error' });
+      setVijesti((prev) =>
+        prev.map((v) => (v.id === id ? { ...v, pozicijaHero: novaPozicija } : v))
+      );
+      setPoruka({ tekst: 'Pozicija vijesti je uspješno ažurirana.', tip: 'success' });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setPoruka({ tekst: err.message, tip: 'error' });
+      } else {
+        setPoruka({ tekst: 'Došlo je do greške pri izmjeni pozicije.', tip: 'error' });
+      }
     }
-  }
-};
+  };
 
   const handleObrisi = async (id: number) => {
-    const korisnikRaw = localStorage.getItem('korisnik');
+    const korisnikRaw = typeof window !== 'undefined' ? localStorage.getItem('korisnik') : null;
     const korisnik = korisnikRaw ? JSON.parse(korisnikRaw) : null;
     const isAdmin = korisnik?.uloga === 'ADMIN';
 
@@ -312,7 +304,7 @@ const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
       setPoruka(null);
 
       try {
-        await obrisiVijest(id); // Direktno brisanje iz API-ja
+        await obrisiVijest(id);
         setVijesti((prev) => prev.filter((v) => v.id !== id));
         setPoruka({ tekst: 'Vijest je uspješno obrisana.', tip: 'success' });
       } catch (err: unknown) {
@@ -327,7 +319,6 @@ const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
       return;
     }
 
-    // 2. AKO JE NOVINAR: Šalje zahtjev administratoru na odobrenje
     const razlogUnos = prompt('Unesite razlog za brisanje ove vijesti (opcionalno):', 'Zastarjelo / Greška u tekstu');
     if (razlogUnos === null) return;
 
@@ -335,7 +326,7 @@ const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
     setPoruka(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const res = await fetch(`${API_URL}/zahtjevi-za-brisanje`, {
         method: 'POST',
         headers: {
@@ -374,20 +365,22 @@ const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
     }
   };
 
-  const filtriraneVijesti = vijesti.filter((v) =>
-    v.naslov.toLowerCase().includes(pretraga.toLowerCase())
-  );
+  const filtriraneVijesti = vijesti.filter((v) => {
+    const poklapaSePretraga = v.naslov.toLowerCase().includes(pretraga.toLowerCase());
+    const poklapaSeKategorija = izabranaKategorijaFilter === '' || String(v.kategorija?.id) === izabranaKategorijaFilter;
+    return poklapaSePretraga && poklapaSeKategorija;
+  });
 
   return (
-    <main className="p-8 space-y-6 max-w-7xl mx-auto w-full">
-      <div className="flex justify-between items-center">
+    <main className="p-4 sm:p-8 space-y-6 max-w-7xl mx-auto w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Vijesti i Članci</h1>
           <p className="text-sm text-gray-500">Upravljanje svim objavljenim i pripremljenim tekstovima.</p>
         </div>
         <button
           onClick={handleOpenCreateModal}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition w-full sm:w-auto text-center"
         >
           + Dodaj novu vijest
         </button>
@@ -408,118 +401,211 @@ const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
           <span>{poruka.tekst}</span>
           <button
             onClick={() => setPoruka(null)}
-            className="text-xs font-bold ml-4 hover:opacity-7 shadow-none"
+            className="text-xs font-bold ml-4 hover:opacity-70 shadow-none"
           >
             ✕
           </button>
         </div>
       )}
 
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm space-y-4">
-        <div className="flex gap-4">
+      <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
             value={pretraga}
             onChange={(e) => setPretraga(e.target.value)}
             placeholder="Pretraži vijesti po naslovu..."
-            className="px-3 py-2 border rounded-md text-sm w-full max-w-xs text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border rounded-md text-sm w-full sm:max-w-xs text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <select
+            value={izabranaKategorijaFilter}
+            onChange={(e) => setIzabranaKategorijaFilter(e.target.value)}
+            className="px-3 py-2 border rounded-md text-sm w-full sm:max-w-xs text-black bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Sve kategorije</option>
+            {kategorije.map((kat) => (
+              <option key={kat.id} value={kat.id}>
+                {kat.naziv}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="overflow-x-auto">
-          {loading ? (
-            <p className="text-gray-500 text-sm py-4">Učitavanje vijesti iz baze...</p>
-          ) : (
-            <table className="w-full text-left text-sm text-gray-600">
-  <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
-    <tr>
-      <th className="px-4 py-3">Slika</th>
-      <th className="px-4 py-3">Naslov</th>
-      <th className="px-4 py-3">Kategorija</th>
-      <th className="px-4 py-3">Pozicija</th>
-      <th className="px-4 py-3">Autor</th>
-      <th className="px-4 py-3">Pregledi</th>
-      <th className="px-4 py-3">Datum</th>
-      <th className="px-4 py-3 text-right">Akcije</th>
-    </tr>
-  </thead>
-  <tbody className="divide-y divide-gray-200">
-    {filtriraneVijesti.map((v) => (
-      <tr key={v.id} className="hover:bg-gray-50">
-        <td className="px-4 py-3">
-          {v.slikaUrl ? (
-            <div className="relative w-12 h-10 overflow-hidden rounded shadow-sm">
-              <Image 
-                src={getPunaSlikaUrl(v.slikaUrl)} 
-                alt={v.naslov} 
-                fill
-                sizes="48px"
-                className="object-cover"
-              />
+        {loading ? (
+          <p className="text-gray-500 text-sm p-6 text-center">Učitavanje vijesti iz baze...</p>
+        ) : (
+          <>
+            {/* MOBILNI PRIKAZ: KARTICE (Prikazuje se samo na manjim ekranima ispod md) */}
+            <div className="grid grid-cols-1 gap-4 md:hidden">
+              {filtriraneVijesti.map((v) => (
+                <div key={v.id} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm space-y-3">
+                  <div className="flex items-start gap-3">
+                    {v.slikaUrl ? (
+                      <div className="relative w-16 h-14 overflow-hidden rounded shadow-sm shrink-0">
+                        <Image 
+                          src={getPunaSlikaUrl(v.slikaUrl)} 
+                          alt={v.naslov} 
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-14 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400 shrink-0">
+                        Nema
+                      </div>
+                    )}
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <span className="inline-block bg-slate-100 text-slate-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                        {v.kategorija?.naziv || 'N/A'}
+                      </span>
+                      <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2">{v.naslov}</h3>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-500 flex justify-between pt-1 border-t border-gray-100">
+                    <span>Autor: <strong className="text-gray-700">{v.autor?.imePrezime || 'Nepoznato'}</strong></span>
+                    <span>Pregleda: <strong className="text-gray-700">{v.brojPregleda ?? 0}</strong></span>
+                  </div>
+
+                  <div className="space-y-1.5 pt-1">
+                    <label className="block text-[11px] font-semibold text-gray-600">Pozicija u Hero sekciji:</label>
+                    <select
+                      value={v.pozicijaHero || 'STANDARDNA'}
+                      onChange={(e) => handlePromijeniPoziciju(v.id, e.target.value)}
+                      className={`w-full text-xs px-2.5 py-1.5 rounded border font-medium outline-none cursor-pointer ${
+                        v.pozicijaHero === 'GLAVNA'
+                          ? 'bg-amber-50 text-amber-800 border-amber-300'
+                          : v.pozicijaHero === 'SPOREDNA'
+                          ? 'bg-blue-50 text-blue-800 border-blue-300'
+                          : 'bg-gray-50 text-gray-700 border-gray-300'
+                      }`}
+                    >
+                      <option value="STANDARDNA">Standardna</option>
+                      <option value="GLAVNA">Glavna</option>
+                      <option value="SPOREDNA">Sporedna</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs text-gray-500">
+                    <span>{new Date(v.datumKreiranja).toLocaleDateString('sr-ME')}</span>
+                    <div className="space-x-2">
+                      <button
+                        onClick={() => handleOpenEditModal(v)}
+                        className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1.5 rounded font-medium transition"
+                      >
+                        Uredi
+                      </button>
+                      <button
+                        onClick={() => handleObrisi(v.id)}
+                        disabled={deletingId === v.id}
+                        className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded font-medium transition disabled:opacity-50"
+                      >
+                        {deletingId === v.id ? '...' : 'Obriši'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {filtriraneVijesti.length === 0 && (
+                <p className="text-center text-gray-400 py-8 text-sm">
+                  Nije pronađena nijedna vijest po zadatim kriterijumima.
+                </p>
+              )}
             </div>
-          ) : (
-            <span className="text-xs text-gray-400">Nema</span>
-          )}
-        </td>
-        <td className="px-4 py-3 font-medium text-gray-900 max-w-md truncate">{v.naslov}</td>
-        <td className="px-4 py-3">
-          <span className="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded">
-            {v.kategorija?.naziv || 'N/A'}
-          </span>
-        </td>
-        {/* Brzo dugme / select za poziciju */}
-        <td className="px-4 py-3">
-          <select
-            value={v.pozicijaHero || 'STANDARDNA'}
-            onChange={(e) => handlePromijeniPoziciju(v.id, e.target.value)}
-            className={`text-xs px-2 py-1 rounded border font-medium outline-none cursor-pointer ${
-              v.pozicijaHero === 'GLAVNA'
-                ? 'bg-amber-50 text-amber-800 border-amber-300'
-                : v.pozicijaHero === 'SPOREDNA'
-                ? 'bg-blue-50 text-blue-800 border-blue-300'
-                : 'bg-gray-50 text-gray-700 border-gray-300'
-            }`}
-          >
-            <option value="STANDARDNA">Standardna</option>
-            <option value="GLAVNA">Glavna</option>
-            <option value="SPOREDNA">Sporedna</option>
-          </select>
-        </td>
-        <td className="px-4 py-3">{v.autor?.imePrezime || 'Nepoznato'}</td>
-        <td className="px-4 py-3 font-semibold text-gray-800">
-          {v.brojPregleda ?? 0}
-        </td>
-        <td className="px-4 py-3">
-          {new Date(v.datumKreiranja).toLocaleDateString('sr-ME')}
-        </td>
-        <td className="px-4 py-3 text-right space-x-3">
-          <button
-            onClick={() => handleOpenEditModal(v)}
-            className="text-blue-600 hover:underline text-xs font-medium"
-          >
-            Uredi
-          </button>
-          <button
-            onClick={() => handleObrisi(v.id)}
-            disabled={deletingId === v.id}
-            className="text-red-600 hover:underline text-xs font-medium disabled:opacity-50"
-          >
-            {deletingId === v.id ? 'Obrada...' : 'Obriši'}
-          </button>
-        </td>
-      </tr>
-    ))}
-    {filtriraneVijesti.length === 0 && (
-      <tr>
-        <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
-          Nije pronađena nijedna vijest.
-        </td>
-      </tr>
-    )}
-  </tbody>
-</table>
-          )}
-        </div>
+
+            {/* DESKTOP PRIKAZ: TABELA (Prikazuje se samo na md ekranima i većim) */}
+            <div className="hidden md:block w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
+              <table className="w-full text-left text-sm text-gray-600 min-w-[750px]">
+                <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">Slika</th>
+                    <th className="px-4 py-3">Naslov</th>
+                    <th className="px-4 py-3">Kategorija</th>
+                    <th className="px-4 py-3">Pozicija</th>
+                    <th className="px-4 py-3">Autor</th>
+                    <th className="px-4 py-3">Pregledi</th>
+                    <th className="px-4 py-3">Datum</th>
+                    <th className="px-4 py-3 text-right">Akcije</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filtriraneVijesti.map((v) => (
+                    <tr key={v.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        {v.slikaUrl ? (
+                          <div className="relative w-12 h-10 overflow-hidden rounded shadow-sm shrink-0">
+                            <Image 
+                              src={getPunaSlikaUrl(v.slikaUrl)} 
+                              alt={v.naslov} 
+                              fill
+                              sizes="48px"
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">Nema</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900 max-w-xs truncate">{v.naslov}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="bg-slate-100 text-slate-800 text-xs px-2 py-1 rounded">
+                          {v.kategorija?.naziv || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <select
+                          value={v.pozicijaHero || 'STANDARDNA'}
+                          onChange={(e) => handlePromijeniPoziciju(v.id, e.target.value)}
+                          className={`text-xs px-2 py-1 rounded border font-medium outline-none cursor-pointer ${
+                            v.pozicijaHero === 'GLAVNA'
+                              ? 'bg-amber-50 text-amber-800 border-amber-300'
+                              : v.pozicijaHero === 'SPOREDNA'
+                              ? 'bg-blue-50 text-blue-800 border-blue-300'
+                              : 'bg-gray-50 text-gray-700 border-gray-300'
+                          }`}
+                        >
+                          <option value="STANDARDNA">Standardna</option>
+                          <option value="GLAVNA">Glavna</option>
+                          <option value="SPOREDNA">Sporedna</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">{v.autor?.imePrezime || 'Nepoznato'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap font-semibold text-gray-800">
+                        {v.brojPregleda ?? 0}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {new Date(v.datumKreiranja).toLocaleDateString('sr-ME')}
+                      </td>
+                      <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                        <button
+                          onClick={() => handleOpenEditModal(v)}
+                          className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded text-xs font-medium transition"
+                        >
+                          Uredi
+                        </button>
+                        <button
+                          onClick={() => handleObrisi(v.id)}
+                          disabled={deletingId === v.id}
+                          className="bg-red-50 text-red-600 hover:bg-red-100 px-2.5 py-1 rounded text-xs font-medium transition disabled:opacity-50"
+                        >
+                          {deletingId === v.id ? '...' : 'Obriši'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtriraneVijesti.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-8 text-center text-gray-400">
+                        Nije pronađena nijedna vijest po zadatim kriterijumima.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* MODAL ZA DODAVANJE / IZMJENU */}
@@ -634,7 +720,6 @@ const handlePromijeniPoziciju = async (id: number, novaPozicija: string) => {
                 />
               </div>
 
-              {/* Sekcija za foto galeriju */}
               <div className="border-t pt-4">
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Foto Galerija (dodatne slike)</label>
                 <input

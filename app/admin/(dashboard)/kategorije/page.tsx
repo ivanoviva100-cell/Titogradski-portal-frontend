@@ -39,7 +39,6 @@ export default function KategorijePage() {
   const handleNazivChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setNaziv(val);
-    // Automatski generiši slug samo ako kreiramo novu kategoriju
     if (!editingId) {
       setSlug(generisiSlug(val));
     }
@@ -62,7 +61,7 @@ export default function KategorijePage() {
     }
   }, []);
 
-useEffect(() => {
+  useEffect(() => {
     document.title = 'Upravljanje Kategorijama - Admin';
 
     const token = localStorage.getItem('token');
@@ -89,7 +88,6 @@ useEffect(() => {
     });
   }, [router, ucitajKategorije]);
 
-  // Slanje forme za KREIRANJE ili IZMJENU
   const handleSacuvajKategoriju = async (e: React.FormEvent) => {
     e.preventDefault();
     setPoruka('');
@@ -131,7 +129,6 @@ useEffect(() => {
     }
   };
 
-  // Pokretanje izmjene u formi
   const handleZapocniEdit = (kat: Kategorija) => {
     setEditingId(kat.id);
     setNaziv(kat.naziv);
@@ -140,14 +137,12 @@ useEffect(() => {
     setGreska('');
   };
 
-  // Otazivanje režima izmjene
   const handleOtkaziEdit = () => {
     setEditingId(null);
     setNaziv('');
     setSlug('');
   };
 
-  // Brisanje kategorije
   const handleObrisiKategoriju = async (id: number, nazivKategorije: string) => {
     const potvrdjeno = window.confirm(
       `Da li ste sigurni da želite obrisati kategoriju "${nazivKategorije}"?\n\nUPOZORENJE: Sve vijesti koje pripadaju ovoj kategoriji biće takođe trajno obrisane!`
@@ -186,54 +181,56 @@ useEffect(() => {
   };
 
   return (
-    <main className="max-w-5xl mx-auto p-8 space-y-8">
+    <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
       {/* SEKCIJA ZA FORMU */}
-      <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <section className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
         <h2 className="text-lg font-semibold mb-4 text-gray-900">
           {editingId ? 'Izmijeni kategoriju' : 'Dodaj novu kategoriju'}
         </h2>
 
         {poruka && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded mb-4 text-sm">
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">
             {poruka}
           </div>
         )}
 
         {greska && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
             {greska}
           </div>
         )}
 
-        <form onSubmit={handleSacuvajKategoriju} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">Naziv kategorije</label>
-            <input
-              type="text"
-              value={naziv}
-              onChange={handleNazivChange}
-              required
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-              placeholder="npr. Politika"
-            />
+        <form onSubmit={handleSacuvajKategoriju} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Naziv kategorije</label>
+              <input
+                type="text"
+                value={naziv}
+                onChange={handleNazivChange}
+                required
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-black"
+                placeholder="npr. Politika"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">Slug (URL)</label>
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                required
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-black bg-gray-50"
+                placeholder="npr. politika"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700">Slug (URL)</label>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              required
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-gray-50"
-              placeholder="npr. politika"
-            />
-          </div>
-
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 pt-2">
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition h-10.5"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg text-sm transition shadow-sm"
             >
               {editingId ? 'Sačuvaj izmjene' : 'Sačuvaj kategoriju'}
             </button>
@@ -242,7 +239,7 @@ useEffect(() => {
               <button
                 type="button"
                 onClick={handleOtkaziEdit}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md transition h-10.5"
+                className="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-6 rounded-lg text-sm transition"
               >
                 Otkaži
               </button>
@@ -251,52 +248,84 @@ useEffect(() => {
         </form>
       </section>
 
-      {/* SEKCIJA ZA PRIKAZ TABELE */}
-      <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      {/* SEKCIJA ZA PRIKAZ */}
+      <section className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-gray-200">
         <h2 className="text-lg font-semibold mb-4 text-gray-900">
           Postojeće kategorije ({kategorije.length})
         </h2>
 
         {loading ? (
-          <p className="text-gray-500 text-sm">Učitavanje kategorija...</p>
+          <p className="text-gray-500 text-sm py-4 text-center">Učitavanje kategorija...</p>
         ) : kategorije.length === 0 ? (
-          <p className="text-gray-500 text-sm">Trenutno nema unesenih kategorija.</p>
+          <p className="text-gray-500 text-sm py-4 text-center">Trenutno nema unesenih kategorija.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-600">
-              <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
-                <tr>
-                  <th className="px-4 py-3 rounded-l-md">ID</th>
-                  <th className="px-4 py-3">Naziv</th>
-                  <th className="px-4 py-3">Slug</th>
-                  <th className="px-4 py-3 text-right rounded-r-md">Akcije</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {kategorije.map((kat) => (
-                  <tr key={kat.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{kat.id}</td>
-                    <td className="px-4 py-3 text-gray-800 font-medium">{kat.naziv}</td>
-                    <td className="px-4 py-3 text-gray-500">/{kat.slug}</td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <button
-                        onClick={() => handleZapocniEdit(kat)}
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs px-3 py-1.5 rounded transition font-medium"
-                      >
-                        Uredi
-                      </button>
-                      <button
-                        onClick={() => handleObrisiKategoriju(kat.id, kat.naziv)}
-                        className="bg-red-100 hover:bg-red-200 text-red-700 text-xs px-3 py-1.5 rounded transition font-medium"
-                      >
-                        Obriši
-                      </button>
-                    </td>
+          <>
+            {/* MOBILNI PRIKAZ (Kartice - dugmad ispod naziva i sluga) */}
+            <div className="grid grid-cols-1 gap-3 md:hidden">
+              {kategorije.map((kat) => (
+                <div key={kat.id} className="border border-gray-200 rounded-lg p-3.5 bg-white space-y-2.5 shadow-xs">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[11px] font-semibold text-gray-400">ID: {kat.id}</span>
+                      <h3 className="text-gray-900 font-semibold text-sm">{kat.naziv}</h3>
+                      <p className="text-gray-500 font-mono text-xs">/{kat.slug}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => handleZapocniEdit(kat)}
+                      className="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs px-3 py-1.5 rounded-md transition font-medium flex-1 text-center"
+                    >
+                      Uredi
+                    </button>
+                    <button
+                      onClick={() => handleObrisiKategoriju(kat.id, kat.naziv)}
+                      className="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-3 py-1.5 rounded-md transition font-medium flex-1 text-center"
+                    >
+                      Obriši
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* DESKTOP PRIKAZ (Tabela) */}
+            <div className="hidden md:block w-full overflow-x-auto rounded-lg border border-gray-200">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3 w-16">ID</th>
+                    <th className="px-4 py-3">Naziv</th>
+                    <th className="px-4 py-3">Slug</th>
+                    <th className="px-4 py-3 text-right">Akcije</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {kategorije.map((kat) => (
+                    <tr key={kat.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">{kat.id}</td>
+                      <td className="px-4 py-3 text-gray-900 font-semibold">{kat.naziv}</td>
+                      <td className="px-4 py-3 text-gray-500 font-mono text-xs">/{kat.slug}</td>
+                      <td className="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                        <button
+                          onClick={() => handleZapocniEdit(kat)}
+                          className="bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs px-3 py-1.5 rounded-md transition font-medium"
+                        >
+                          Uredi
+                        </button>
+                        <button
+                          onClick={() => handleObrisiKategoriju(kat.id, kat.naziv)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 text-xs px-3 py-1.5 rounded-md transition font-medium"
+                        >
+                          Obriši
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </main>
